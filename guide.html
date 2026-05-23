@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DWARF Mini PRO — Space Atlas | Complete User Guide</title>
+  <style>
+    :root {
+      --bg: #0b0d12; --card: #14171f; --text: #e2e8f0; --muted: #94a3b8;
+      --accent: #38bdf8; --accent2: #818cf8; --border: #1e293b; --warn: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.65; margin: 0; padding: 0;
+    }
+    .container { max-width: 920px; margin: 0 auto; padding: 2rem 1.25rem; }
+    header { text-align: center; padding: 2.5rem 0 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 2rem; }
+    h1 { font-size: 2.1rem; margin: 0; background: linear-gradient(90deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .subtitle { color: var(--muted); font-size: 0.95rem; margin-top: 0.4rem; }
+    h2 { color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-top: 2.8rem; }
+    h3 { color: var(--accent2); margin-top: 1.6rem; }
+    p, li { color: var(--text); }
+    ul, ol { padding-left: 1.4rem; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.1rem; margin: 1rem 0; }
+    .tip { background: #0f2027; border-left: 3px solid var(--accent); padding: 1rem; margin: 1.2rem 0; border-radius: 0 6px 6px 0; }
+    .warning { background: #2a1a00; border-left: 3px solid var(--warn); padding: 1rem; margin: 1.2rem 0; border-radius: 0 6px 6px 0; }
+    .highlight { background: #1a1d24; border-left: 3px solid var(--accent2); padding: 1rem; margin: 1.2rem 0; border-radius: 0 6px 6px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.95rem; }
+    th, td { padding: 0.7rem 0.6rem; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: #1a1d24; color: var(--accent); }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .nav-toc { background: var(--card); padding: 1rem; border-radius: 8px; margin-bottom: 2.2rem; border: 1px solid var(--border); }
+    .nav-toc a { display: block; padding: 0.35rem 0; color: var(--muted); font-size: 0.95rem; }
+    .nav-toc a:hover { color: var(--accent); }
+    .badge { display: inline-block; background: var(--card); border: 1px solid var(--border); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.8rem; color: var(--muted); }
+    footer { text-align: center; margin-top: 3.5rem; padding-top: 1.8rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.85rem; }
+    @media print {
+      body { background: #fff; color: #111; }
+      .card, .nav-toc, header, footer, .tip, .warning, .highlight { border: 1px solid #ccc; background: #fff; }
+      a { color: #000; text-decoration: underline; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>DWARF Mini PRO — Space Atlas</h1>
+      <div class="subtitle">Complete User Guide & Field Manual | Version 1.1 (Predictive & Constraint-Aware)</div>
+    </header>
+
+    <div class="nav-toc">
+      <strong> Table of Contents</strong>
+      <a href="#intro">1. Introduction & Purpose</a>
+      <a href="#features">2. Core Philosophy & Key Features</a>
+      <a href="#quickstart">3. Quick Start: Your First Session in 5 Steps</a>
+      <a href="#walkthrough">4. Detailed Feature Walkthrough</a>
+      <a href="#workflow">5. Session Planning & Field Workflow</a>
+      <a href="#advanced">6. Advanced Techniques & Post-Processing</a>
+      <a href="#troubleshooting">7. Data Interpretation & Troubleshooting</a>
+      <a href="#logging">8. Logging, Exporting & Continuous Improvement</a>
+      <a href="#roadmap">9. Roadmap & Future Updates</a>
+      <a href="#appendices">Appendices & Quick Reference</a>
+    </div>
+
+    <section id="intro">
+      <h2>1. Introduction & Purpose</h2>
+      <p><strong>DWARF Mini PRO — Space Atlas</strong> is not a static cheat sheet. It is a <strong>dynamic, predictive planning engine</strong> built specifically for DWARF Mini astrophotographers. It replaces guesswork with real-time, location-aware recommendations that adapt to your exact sky, date, and physical constraints.</p>
+      <div class="highlight">
+        <strong> The Predictive Core:</strong> The app doesn't just list parameters. It calculates them. By combining your coordinates, local Bortle class, lunar phase, altitude curves, and atmospheric data, it predicts the <em>exact</em> exposure, gain, filter, and session length needed to maximize your DWARF Mini's output <strong>tonight</strong>.
+      </div>
+      <div class="card">
+        <strong>🎯 Who is this for?</strong>
+        <ul>
+          <li>Beginners learning exposure/gain/filter basics</li>
+          <li>Intermediate users optimizing session time</li>
+          <li>Advanced astrophotographers planning HDR splits or challenging targets</li>
+          <li>Anyone using DWARF Mini in Alt-Az or Equatorial mode</li>
+        </ul>
+      </div>
+      <p>Traditional tables ignore reality. Space Atlas embraces it: if a target drops below the 30° imaging threshold, if clouds roll in, or if you only have 25 minutes, the prediction <strong>recalculates instantly</strong>. You get actionable, physically possible guidance—not idealized theory.</p>
+    </section>
+
+    <section id="features">
+      <h2>2. Core Philosophy & Key Features</h2>
+      <table>
+        <tr><th>Principle</th><th>Implementation</th></tr>
+        <tr><td>Adaptive, not absolute</td><td>Parameters shift dynamically with Bortle, moon phase, altitude, and weather</td></tr>
+        <tr><td><strong>Predictive & Constraint-Aware</strong></td><td><strong>Real-time recalculation based on altitude thresholds, time limits, and sky windows</strong></td></tr>
+        <tr><td>Field-ready</td><td>Works offline, no login, mobile-optimized, home-screen installable</td></tr>
+        <tr><td>Integrated workflow</td><td>Planning → Acquisition → Logging → Export in one interface</td></tr>
+        <tr><td>Educational but practical</td><td>Explains <em>why</em> values are suggested, not just <em>what</em> they are</td></tr>
+      </table>
+      <h3>🔑 Key Modules</h3>
+      <ol>
+        <li><strong>Location & Context Engine</strong> (GPS, city dropdown, manual lat/lon, Bortle 1–9)</li>
+        <li><strong>Real-Time Weather & Seeing Estimator</strong> (clouds, humidity, temp, wind → estimated seeing)</li>
+        <li><strong>Object Database</strong> (M1–M110 + major NGC targets with magnitude, type, filters, frames)</li>
+        <li><strong>Predictive Session Planner</strong> (Recommended mode + Limited-Time mode with quality rating & constraint handling)</li>
+        <li><strong>Altitude & Visibility Curves</strong> (Night zones, green windows, peak altitude, 30° rule)</li>
+        <li><strong>Session Logger & CSV Export</strong> (Track conditions, results, and refine future sessions)</li>
+        <li><strong>Stellarium Web Integration</strong> (One-click sky planning)</li>
+        <li><strong>Advanced HDR & Workflow Guides</strong> (Built-in techniques for core/outer separation)</li>
+      </ol>
+    </section>
+
+    <section id="quickstart">
+      <h2>3. Quick Start: Your First Session in 5 Steps</h2>
+      <ol>
+        <li><strong>Open the app</strong> in any modern browser. Tap <code> GPS</code> to auto-detect location + Bortle estimate, or select your city manually.</li>
+        <li><strong>Set tonight's date</strong> and choose your <strong>Bortle scale</strong> (1–9). If unsure, start with 5–6 (suburban) and adjust later.</li>
+        <li><strong>Tap a target</strong> (e.g., <code>M31</code>, <code>M42</code>, <code>NGC 7000</code>) or use the search bar.</li>
+        <li><strong>Review the Data Sheet</strong>: Check recommended exposure, gain, filter, and frame count. Note the green altitude window and moon impact.</li>
+        <li><strong>Open Session Planner</strong> → Choose <code> Recommended</code> for auto-calculated values, or <code>⏱️ I have limited time</code> to input your available minutes. Follow the output to your mount.</li>
+      </ol>
+      <div class="tip">
+        <strong>💡 Pro Tip:</strong> Add the app to your home screen (<code>Share → Add to Home Screen</code>) for instant offline access in the field.
+      </div>
+    </section>
+
+    <section id="walkthrough">
+      <h2>4. Detailed Feature Walkthrough</h2>
+      <h3>📍 Location & Context Engine</h3>
+      <ul>
+        <li><strong>GPS Auto-Detect</strong>: Estimates your position and provides a preliminary Bortle class based on light pollution models.</li>
+        <li><strong>Manual Override</strong>: Type city, or enter <code>Lat:</code> / <code>Lon:</code> for precise coordinates.</li>
+        <li><strong>Bortle Selector</strong>: Ranges from <code>1-2 (Perfect dark)</code> to <code>9 (City center)</code>. Directly influences gain, exposure, and filter recommendations.</li>
+      </ul>
+
+      <h3>🌤️ Real-Time Weather & Seeing Estimator</h3>
+      <ul>
+        <li>Pulls live data for ☁️ Cloud Cover, 💧 Humidity, 🌡️ Temperature, 💨 Wind.</li>
+        <li>Estimates 🔭 <strong>Seeing quality</strong> based on atmospheric stability proxies.</li>
+      </ul>
+      <div class="warning">
+        ⚠️ <strong>Note:</strong> Seeing is an estimate. Always verify with a live star test before committing to long exposures.
+      </div>
+
+      <h3>🔍 Object Search & Database</h3>
+      <ul>
+        <li><strong>Quick-Pick Buttons</strong>: M1, M13, M27, M31, M42, M45, M51, M57, M81, M82, M101, NGC 7000.</li>
+        <li><strong>Search Bar</strong>: Type any Messier or supported NGC designation.</li>
+        <li><strong>Data Sheet Breakdown</strong>:
+          <ul>
+            <li>🛰️ Target / Mode & Magnitude & Object Type</li>
+            <li>⏱️ Exposure Time (base → adapted) & 📶 Gain (base → adapted)</li>
+            <li> Filter Recommendation (Astro / Dual-band) &  Calibration / Frames</li>
+            <li> Altitude Curve, 🌙 Moon Phase & Impact, 📅 Best Viewing Months</li>
+            <li>💡 Operational Notes & Tips</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h3> Predictive Session Planner (The Brain)</h3>
+      <div class="highlight">
+        <strong>🧠 How Predictions Work:</strong> The planner doesn't guess. It simulates your session against real astronomical and environmental constraints. If a target will drop below 30° after 32 minutes, or if moonrise cuts your dark window short, the prediction <strong>automatically truncates and recalculates</strong> to give you a physically achievable session length and frame count.
+      </div>
+      <table>
+        <tr><th>Mode</th><th>How it works</th><th>Output</th></tr>
+        <tr><td><code>🤖 Recommended</code></td><td>Calculates optimal exposure, gain, total duration, and frame count based on Bortle, moon, altitude curves, and 30° threshold</td><td>Full session blueprint (auto-truncated if sky window closes)</td></tr>
+        <tr><td><code>⏱️ I have limited time</code></td><td>You input available minutes → app keeps optimal exposure/gain, calculates max feasible frames within your window, and returns a quality rating</td><td>Realistic expectations + frame target</td></tr>
+        <tr><td><strong>Quality Rating</strong></td><td>🌟 Excellent · ✅ Good · 🔶 Decent · ⚠️ Minimal · ❌ Too short</td><td>Helps decide whether to shoot or wait</td></tr>
+      </table>
+
+      <h3>📊 Session Log & CSV Export</h3>
+      <ul>
+        <li>Add custom notes (seeing, filter used, tracking issues, results).</li>
+        <li>Tap <code> Add</code> to save to local log.</li>
+        <li><code>⬇️ CSV</code> button appears after first entry. Export contains: Date, Object, Bortle, Moon, Exp, Gain, Frames, Quality, Notes.</li>
+        <li>Use CSV to build a personal database or share with community forums.</li>
+      </ul>
+
+      <h3>🔭 Stellarium Web Integration</h3>
+      <p>One-click link opens the target in Stellarium Web for sky planning, framing, and constellation context.</p>
+    </section>
+
+    <section id="workflow">
+      <h2>5. Session Planning & Field Workflow</h2>
+      <h3>🌞 Pre-Session (Daytime)</h3>
+      <ol>
+        <li>Check weather & seeing estimate in-app.</li>
+        <li>Pick target → run Session Planner.</li>
+        <li><strong>Read the prediction carefully:</strong> Note the exact exposure, gain, filter, and total session length. If the planner shows a truncated window (e.g., "30 min max before target <30°"), respect it.</li>
+        <li>Pack gear: tripod, balance weights, Bahtinov mask, filters, power bank.</li>
+      </ol>
+
+      <h3>⚙️ Setup (Night)</h3>
+      <ol>
+        <li>Level tripod → mount DWARF Mini → balance carefully.</li>
+        <li>Align polar axis (if using EQ mode) or enable Alt-Az tracking.</li>
+        <li>Rough focus on bright star → apply Bahtinov mask → fine-tune until spike is centered.</li>
+        <li>Point to target using app's star map or Stellarium link.</li>
+      </ol>
+
+      <h3>📸 Acquisition</h3>
+      <ol>
+        <li>Input recommended settings into DWARFLAB.</li>
+        <li>Take 3–5 test frames → check live preview:
+          <ul>
+            <li>Stars round? → tracking OK</li>
+            <li>Core blown out? → reduce exposure or split HDR</li>
+            <li>Noise high? → verify Bortle/filter choice</li>
+          </ul>
+        </li>
+        <li>Start sequence → monitor first 10 frames.</li>
+        <li>Log conditions & results immediately after session.</li>
+      </ol>
+
+      <h3>📂 Post-Session</h3>
+      <ol>
+        <li>Export CSV log.</li>
+        <li>Review notes: what worked, what didn’t.</li>
+        <li>Adjust future parameters based on real results.</li>
+      </ol>
+    </section>
+
+    <section id="advanced">
+      <h2>6. Advanced Techniques & Post-Processing</h2>
+      <h3>🚀 HDR Workflow (Core vs Outer)</h3>
+      <p>Best for galaxies (M31, M51, M101) and bright nebulae with dense cores.</p>
+      <table>
+        <tr><th>Session</th><th>Exposure</th><th>Gain</th><th>Frames</th><th>Goal</th></tr>
+        <tr><td>Core</td><td>10–15 s</td><td>50–60</td><td>50–100</td><td>Preserve central detail, avoid saturation</td></tr>
+        <tr><td>Outer</td><td>30–45 s</td><td>60–70</td><td>200+</td><td>Pull out faint arms/nebulosity</td></tr>
+      </table>
+      <p><strong>Merge:</strong> Stack separately → open in Photoshop/Siril → layer core over outer using <code>Screen</code> or <code>Lighten</code> blend mode → mask edges.</p>
+
+      <h3>️ Filter Strategy</h3>
+      <table>
+        <tr><th>Bortle</th><th>Nebula Type</th><th>Recommended Filter</th></tr>
+        <tr><td>1–4</td><td>Emission (M42, NGC 7000)</td><td>Astro (optional)</td></tr>
+        <tr><td>5–6</td><td>Emission</td><td>Dual-band strongly advised</td></tr>
+        <tr><td>7–9</td><td>Emission</td><td>Dual-band mandatory; avoid low-SB galaxies</td></tr>
+        <tr><td>Any</td><td>Reflection/Galaxy</td><td>Astro only</td></tr>
+      </table>
+
+      <h3>📈 Gain & Exposure Science</h3>
+      <ul>
+        <li>The app suggests <strong>starting points</strong>, not absolutes.</li>
+        <li>Higher Bortle → higher gain (to swamp read noise), shorter exposure (to avoid sky fog).</li>
+        <li>Always validate with live preview. If stars are round and background is clean, you’re in the sweet spot.</li>
+      </ul>
+
+      <h3> Post-Processing Tips</h3>
+      <ul>
+        <li>Stack in Siril / PixInsight / DWARFLAB built-in stacker.</li>
+        <li>Separate stars vs nebula/galaxy for independent processing.</li>
+        <li>Apply gentle <code>Clarity</code> / <code>Dehaze</code> in Camera Raw; avoid over-sharpening noise.</li>
+        <li>Use <code>Screen</code> blend mode for star layer over deep-sky base.</li>
+      </ul>
+    </section>
+
+    <section id="troubleshooting">
+      <h2>7. Data Interpretation & Troubleshooting</h2>
+      <h3>📐 Reading the Altitude Curve</h3>
+      <ul>
+        <li>🌙 <strong>Dark zones</strong> = nighttime observation window</li>
+        <li>🟢 <strong>Green zones</strong> = best window (night + altitude >30°)</li>
+        <li> <strong>Peak dot</strong> = maximum altitude + local time</li>
+        <li>️ <strong>30° rule</strong> = imaging below this increases atmospheric distortion & light pollution</li>
+      </ul>
+
+      <h3>️ Common Issues & Fixes</h3>
+      <table>
+        <tr><th>Symptom</th><th>Likely Cause</th><th>Solution</th></tr>
+        <tr><td>Stars trailing / oval</td><td>Tracking drift, poor polar alignment, wind</td><td>Lower exposure, re-check alignment, use lower tripod</td></tr>
+        <tr><td>Burnt core</td><td>Exposure too long for object brightness</td><td>Switch to HDR split, reduce exp by 30–50%</td></tr>
+        <tr><td>High noise / grain</td><td>Gain too high, insufficient frames, high Bortle</td><td>Lower gain, add frames, use dual-band if emission target</td></tr>
+        <tr><td>Poor framing / missed target</td><td>Plate solve drift, manual pointing error</td><td>Use Stellarium link, enable auto-center in DWARFLAB</td></tr>
+        <tr><td>App values don't match results</td><td>Local microclimate, unexpected moonrise, wrong Bortle</td><td>Trust live preview, adjust manually, log actual conditions</td></tr>
+      </table>
+      <div class="tip">
+        🔑 <strong>Golden Rule:</strong> The app gives you a scientifically grounded baseline. <strong>Your live preview is the final authority.</strong>
+      </div>
+    </section>
+
+    <section id="logging">
+      <h2>8. Logging, Exporting & Continuous Improvement</h2>
+      <ul>
+        <li><strong>Why log?</strong> Turns guesswork into data. You’ll quickly see which Bortle/gain/exposure combos work for your specific sky.</li>
+        <li><strong>CSV Structure:</strong> <code>Date, Object, Bortle, Moon%, Exp, Gain, Frames, Quality, Notes</code></li>
+        <li><strong>Build Your Database:</strong> Import CSV into spreadsheet → filter by object/Bortle → create personal reference tables.</li>
+        <li><strong>Feedback Loop:</strong> Share anonymized logs with developer to refine future algorithm updates.</li>
+      </ul>
+    </section>
+
+    <section id="roadmap">
+      <h2>9. Roadmap & Future Updates</h2>
+      <p>Space Atlas is designed to evolve. Planned modules include:</p>
+      <ul>
+        <li>✅ Auto-Bortle via GPS + light pollution API</li>
+        <li>🔄 EQ vs Alt-Az mode toggles (tracking limits per mode)</li>
+        <li>🌐 Community database: user-submitted logs → crowd-sourced parameter refinement</li>
+        <li>📲 Push weather alerts & moonrise warnings</li>
+        <li>📂 Custom object upload & personal target lists</li>
+        <li>🤖 AI-assisted seeing prediction & frame discard estimator</li>
+      </ul>
+      <div class="tip">
+         <strong>Guide Versioning:</strong> This manual is modular. Future app updates will append new sections or replace existing ones without breaking core workflow. Check app settings for <code>Guide Version</code> tag.
+      </div>
+    </section>
+
+    <section id="appendices">
+      <h2>Appendices & Quick Reference</h2>
+      <h3>A. Glossary</h3>
+      <table>
+        <tr><th>Term</th><th>Definition</th></tr>
+        <tr><td>Bortle Scale</td><td>1–9 rating of sky darkness (1=pristine, 9=inner city)</td></tr>
+        <tr><td>Gain</td><td>Sensor amplification; higher = more signal but more noise</td></tr>
+        <tr><td>HDR Workflow</td><td>Dual-exposure technique to preserve bright cores & faint outskirts</td></tr>
+        <tr><td>Seeing</td><td>Atmospheric stability; affects star sharpness & tracking</td></tr>
+        <tr><td>Plate Solving</td><td>Software matches star pattern to catalog for precise pointing</td></tr>
+        <tr><td>Screen Blend</td><td>Photoshop mode that makes black transparent, ideal for star overlays</td></tr>
+      </table>
+
+      <h3>B. Quick Reference Tables</h3>
+      <p><strong>Filter by Object Type</strong></p>
+      <table>
+        <tr><th>Type</th><th>Best Filter</th><th>Notes</th></tr>
+        <tr><td>Emission Nebula</td><td>Dual-band</td><td>Cuts light pollution, passes Hα/OIII</td></tr>
+        <tr><td>Reflection Nebula</td><td>Astro</td><td>Dual-band blocks blue reflection</td></tr>
+        <tr><td>Galaxy</td><td>Astro</td><td>Dual-band removes starlight, ruins structure</td></tr>
+        <tr><td>Supernova Remnant</td><td>Dual-band / Astro</td><td>Depends on filament composition</td></tr>
+      </table>
+
+      <p><strong>Gain/Exposure Ranges by Bortle (Starting Points)</strong></p>
+      <table>
+        <tr><th>Bortle</th><th>Gain</th><th>Exposure</th><th>Frames (typical)</th></tr>
+        <tr><td>1–3</td><td>50–60</td><td>30–45s</td><td>40–80</td></tr>
+        <tr><td>4–6</td><td>60–75</td><td>25–35s</td><td>60–100</td></tr>
+        <tr><td>7–9</td><td>75–90</td><td>15–25s</td><td>80–150</td></tr>
+      </table>
+
+      <h3>C. Support & Feedback</h3>
+      <ul>
+        <li> Report bugs or missing objects via in-app <code>Feedback</code> button</li>
+        <li>📤 Share CSV logs to improve crowd-sourced recommendations</li>
+        <li>👥 Join DWARF community forums for workflow tips & calibration presets</li>
+        <li>📧 Contact: [Your Email / GitHub / Discord]</li>
+      </ul>
+
+      <h3>D. Credits & License</h3>
+      <p>Built for the astrophotography community. Data sources: SIMBAD, NASA/IPAC, Light Pollution Map API, DWARF community testing.<br>
+      License: Free for personal & educational use. Commercial redistribution requires permission.<br>
+      <span class="badge">Version 1.1</span> | Last updated: May 2026</p>
+    </section>
+
+    <footer>
+      🖨️ <strong>To export as PDF:</strong> Open in browser → <code>Ctrl+P</code> / <code>Cmd+P</code> → Destination: <code>Save as PDF</code> → Margins: <code>Minimum</code> → Enable <code>Background graphics</code><br>
+      🔁 This guide is living. As Space Atlas gains new features, sections will be updated, versioned, and re-released.<br>
+      Clear skies, and may your stars always be round. ✨
+    </footer>
+  </div>
+</body>
+</html>
