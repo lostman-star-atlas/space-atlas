@@ -6,6 +6,10 @@
   <title>DWARF mini PRO — Space Atlas</title>
   <meta name="theme-color" content="#050508">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DWARF PRO">
+  <!-- PWA manifest (create manifest.json alongside index.html + sw.js) -->
+  <!-- <link rel="manifest" href="./manifest.json"> -->
   <style>
     :root {
       --bg-deep: #050508;
@@ -156,6 +160,7 @@
       letter-spacing: 1px;
     }
     .badge.easy { background: rgba(104, 211, 145, 0.2); color: var(--success); border: 1px solid var(--success); }
+    .badge.intermediate { background: rgba(246, 173, 85, 0.2); color: var(--warning); border: 1px solid var(--warning); }
     .badge.medium { background: rgba(246, 173, 85, 0.2); color: var(--warning); border: 1px solid var(--warning); }
     .badge.hard { background: rgba(252, 129, 129, 0.2); color: var(--danger); border: 1px solid var(--danger); }
     .row {
@@ -307,7 +312,72 @@
       .setup-grid { flex-direction: column; }
       .setup-item.success { margin-left: 0; }
       .location-bar { flex-direction: column; align-items: flex-start; }
+      /* Tonight's Best: hide buttons, show select on mobile */
+      .tonight-filter-btns { display: none !important; }
+      .tonight-filter-select { display: block !important; }
+      /* Tonight grid: 2 columns on mobile */
+      #tonightGrid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+      /* Sheet rows: stack icon+content */
+      .row { flex-direction: column; gap: 8px; }
+      .icon-box { width: 32px; height: 32px; font-size: 1rem; }
+      /* Table cells & values: prevent overflow */
+      .value { font-size: 0.95rem; word-break: break-word; }
+      .note  { font-size: 0.78rem; word-break: break-word; }
+      /* Location bar inputs: full width */
+      .location-bar input { width: 100% !important; }
+      .location-bar select { width: 100%; }
+      /* Canvas: full width */
+      #altCanvas { width: 100% !important; min-width: 0 !important; }
+      /* Session planner grid */
+      .setup-grid[style*="grid-template-columns:repeat(3,1fr)"] { grid-template-columns: repeat(2, 1fr) !important; }
+      /* Weather row: wrap items */
+      #weatherRow > div > div { min-width: 80px; }
+      /* Prevent horizontal overflow globally */
+      .tech-sheet { overflow-x: hidden; }
+      .sheet-header { flex-wrap: wrap; gap: 10px; }
+      /* Search box full width on mobile */
+      .search-box { flex-direction: column; }
+      .search-box input[type="text"] { width: 100%; }
+      .search-box button { width: 100%; padding: 10px; }
+      /* Tags: scroll horizontally */
+      .tags { flex-wrap: nowrap; overflow-x: auto; }
+      /* altStats: wrap properly */
+      #altStats { flex-direction: column; gap: 4px !important; }
+      /* Month pills */
+      .months-list { gap: 4px; }
+      .month-pill { font-size: 0.68rem; padding: 3px 7px; }
+      /* corrBanner legibility */
+      #corrBanner { font-size: 0.75rem !important; padding: 10px 12px !important; }
+      /* Quick setup items: 2 columns */
+      .setup-item { padding: 8px 10px !important; }
+      /* Body padding on mobile */
+      body { padding: 12px !important; }
+      .container { max-width: 100%; }
+      header h1 { font-size: 1.5rem; }
     }
+    @media (max-width: 400px) {
+      #tonightGrid { grid-template-columns: 1fr !important; }
+      .tonight-card .tc-win { font-size: 0.65rem; }
+    }
+    .tonight-filter-btns { display: flex; gap: 6px; flex-wrap: nowrap; }
+    .tonight-card {
+      background: var(--bg-row);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .tonight-card:hover { border-color: var(--accent); background: rgba(183,148,244,0.05); }
+    .tonight-card .tc-id { font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; color: var(--accent); }
+    .tonight-card .tc-name { font-size: 0.78rem; color: var(--text-sub); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tonight-card .tc-alt { font-size: 1.1rem; font-weight: 700; margin-top: 6px; }
+    .tonight-card .tc-win { font-size: 0.72rem; color: var(--text-sub); margin-top: 2px; font-family: var(--font-mono); }
+    .tonight-card .tc-bar { height: 3px; border-radius: 2px; margin-top: 8px; background: var(--border); }
+    .tonight-card .tc-bar-fill { height: 3px; border-radius: 2px; }
+    .tonight-card .tc-diff { position: absolute; top: 8px; right: 8px; font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 3px; }
   </style>
 </head>
 <body>
@@ -660,16 +730,51 @@
       </div>
     </div>
 
-    <!-- WEATHER ROW -->
-    <div id="weatherRow" style="display:none;background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:12px 20px;margin-bottom:16px;">
-      <div style="font-size:0.7rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">🌤️ Real-time Weather — <span style="font-weight:400;color:var(--text-sub);">Seeing estimated from cloud cover, humidity &amp; wind</span></div>
-      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;">
-        <div><div style="font-size:0.7rem;color:var(--text-sub);margin-bottom:2px;">☁️ CLOUDS</div><div id="wClouds" style="font-family:var(--font-mono);font-size:1rem;font-weight:700;"></div></div>
-        <div><div style="font-size:0.7rem;color:var(--text-sub);margin-bottom:2px;">💧 HUMIDITY</div><div id="wHumidity" style="font-family:var(--font-mono);font-size:1rem;font-weight:700;"></div></div>
-        <div><div style="font-size:0.7rem;color:var(--text-sub);margin-bottom:2px;">🌡️ TEMP</div><div id="wTemp" style="font-family:var(--font-mono);font-size:1rem;font-weight:700;"></div></div>
-        <div><div style="font-size:0.7rem;color:var(--text-sub);margin-bottom:2px;">💨 WIND</div><div id="wWind" style="font-family:var(--font-mono);font-size:1rem;font-weight:700;"></div></div>
-        <div><div style="font-size:0.7rem;color:var(--text-sub);margin-bottom:2px;">🔭 SEEING</div><div id="wSeeing" style="font-family:var(--font-mono);font-size:1rem;font-weight:700;"></div><div id="wSeeingNote" style="font-size:0.7rem;color:var(--text-sub);"></div></div>
-        <div style="flex:1;text-align:right;"><div id="wLocation" style="font-size:0.72rem;color:var(--text-sub);"></div><div id="wDesc" style="font-size:0.82rem;font-weight:600;margin-top:2px;"></div></div>
+    <!-- TONIGHT'S BEST -->
+      <div id="tonightPanel" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;margin-bottom:20px;overflow:hidden;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;user-select:none;" onclick="toggleTonight()">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:1.3rem;">🌟</span>
+          <div>
+            <div style="font-size:0.85rem;font-weight:700;color:var(--accent);letter-spacing:1px;text-transform:uppercase;">Tonight's Best</div>
+            <div id="tonightSubtitle" style="font-size:0.75rem;color:var(--text-sub);margin-top:1px;">Objects visible tonight from your location</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <!-- Desktop filter buttons -->
+          <div class="tonight-filter-btns" onclick="event.stopPropagation()">
+            <button id="tbtnAll"    onclick="setTonightFilter('all')"       style="font-size:0.72rem;padding:4px 10px;border-radius:5px;border:1px solid var(--accent);background:var(--accent);color:#000;cursor:pointer;font-weight:700;">All</button>
+            <button id="tbtnGal"   onclick="setTonightFilter('Galaxy')"    style="font-size:0.72rem;padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text-sub);cursor:pointer;">Gal</button>
+            <button id="tbtnNeb"   onclick="setTonightFilter('Nebula')"    style="font-size:0.72rem;padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text-sub);cursor:pointer;">Neb</button>
+            <button id="tbtnGlob"  onclick="setTonightFilter('Globular')"  style="font-size:0.72rem;padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text-sub);cursor:pointer;">Glob</button>
+            <button id="tbtnEasy"  onclick="setTonightFilter('Easy')"         style="font-size:0.72rem;padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text-sub);cursor:pointer;">Easy</button>
+            <button id="tbtnInt"   onclick="setTonightFilter('Intermediate')" style="font-size:0.72rem;padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text-sub);cursor:pointer;">Int</button>
+            <button id="tbtnHard"  onclick="setTonightFilter('Hard')"         style="font-size:0.72rem;padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text-sub);cursor:pointer;">Hard</button>
+          </div>
+          <!-- Mobile dropdown -->
+          <select id="tonightFilterSelect" class="tonight-filter-select" onclick="event.stopPropagation()" onchange="setTonightFilter(this.value)"
+            style="display:none;background:#000;border:1px solid var(--accent);color:var(--accent);padding:5px 8px;border-radius:6px;font-size:0.8rem;font-family:var(--font-mono);cursor:pointer;outline:none;max-width:110px;">
+            <option value="all">All Types</option>
+            <option value="Galaxy">🌌 Galaxies</option>
+            <option value="Nebula">🌫️ Nebulae</option>
+            <option value="Globular">✨ Globulars</option>
+            <option value="Easy">🟢 Easy</option>
+            <option value="Intermediate">🟡 Interm.</option>
+            <option value="Hard">🔴 Hard</option>
+          </select>
+          <span id="tonightArrow" style="color:var(--text-sub);font-size:0.8rem;transition:transform 0.2s;">▼</span>
+        </div>
+      </div>
+      <div id="tonightContent" style="border-top:1px solid var(--border);padding:14px 18px;">
+        <div id="tonightGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;">
+          <div style="color:var(--text-sub);font-size:0.85rem;grid-column:1/-1;text-align:center;padding:20px 0;">
+            ⏳ Set your location and click Refresh to load tonight's targets...
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;">
+          <div id="tonightCount" style="font-size:0.75rem;color:var(--text-sub);"></div>
+          <button onclick="buildTonight()" style="font-size:0.78rem;padding:6px 14px;border-radius:6px;background:transparent;border:1px solid var(--accent);color:var(--accent);cursor:pointer;font-weight:700;">🔄 Refresh</button>
+        </div>
       </div>
     </div>
 
@@ -758,16 +863,16 @@
         <div class="content" style="flex:2">
           <span class="label">Altitude Curve — <span id="altDateLabel"></span> — <span id="altLocLabel"></span></span>
           <div style="font-size:0.72rem;color:var(--text-sub);margin:4px 0 6px;opacity:0.8;">
-            🌙 Dark zones = night &nbsp;|&nbsp; 🟢 Green = best window (night &amp; above 30°) &nbsp;|&nbsp; ⚪ Dot = peak time
+            🌙 Night window: 18:00 → midnight → 06:00 &nbsp;|&nbsp; 🟢 Green = best (alt &gt;30° &amp; dark sky) &nbsp;|&nbsp; ⚪ Dot = peak
           </div>
           <div class="graph-container">
             <canvas id="altCanvas" style="display:block;width:100%;height:180px;"></canvas>
           </div>
           <div id="altStats" style="display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;font-family:monospace;font-size:0.78rem;color:var(--text-sub);"></div>
           <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:0.72rem;color:var(--text-sub);border-top:1px solid var(--border);padding-top:8px;">
-            <span><span style="display:inline-block;width:10px;height:10px;background:rgba(15,25,55,0.8);border:1px solid rgba(120,140,220,0.5);vertical-align:middle;margin-right:3px;"></span>Night (20:00–06:00) = observation window</span>
-            <span><span style="display:inline-block;width:10px;height:10px;background:rgba(104,211,145,0.2);border:1px solid rgba(104,211,145,0.4);vertical-align:middle;margin-right:3px;"></span>Green = best window (night &amp; above 30°)</span>
-            <span><span style="display:inline-block;width:10px;height:10px;background:rgba(183,148,244,0.3);border:1px solid #b794f4;vertical-align:middle;margin-right:3px;"></span>Purple curve = altitude over 24h</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:rgba(15,25,55,0.8);border:1px solid rgba(120,140,220,0.5);vertical-align:middle;margin-right:3px;"></span>Graph = night window 18:00 → 06:00 (midnight centered)</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:rgba(104,211,145,0.2);border:1px solid rgba(104,211,145,0.4);vertical-align:middle;margin-right:3px;"></span>Green = best window (above 30° &amp; astronomical night)</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:rgba(183,148,244,0.3);border:1px solid #b794f4;vertical-align:middle;margin-right:3px;"></span>Purple curve = altitude</span>
             <span>⚪ Peak dot = max altitude + local time</span>
             <span>— — 30° min recommended for imaging</span>
           </div>
@@ -1007,37 +1112,76 @@
       } catch(e) {}
     })();
 
-    // ── ASTRONOMY ──
+    // ── ASTRONOMY ENGINE v2 (corrected LST/JD) ──
+    // toJD: returns Julian Day Number for noon UTC of the given date (local date fields)
     function toJD(date){
       const y=date.getFullYear(),m=date.getMonth()+1,d=date.getDate();
       const A=Math.floor((14-m)/12),Y=y+4800-A,M=m+12*A-3;
       return d+Math.floor((153*M+2)/5)+365*Y+Math.floor(Y/4)-Math.floor(Y/100)+Math.floor(Y/400)-32045;
     }
-    function lstDeg(jd,lon){
-      const T=(jd-2451545)/36525;
-      let g=280.46061837+360.98564736629*(jd-2451545)+0.000387933*T*T;
-      return((g+lon)%360+360)%360;
+
+    // getJD: returns full Julian Date for a JS Date object (using UTC fields)
+    // toJD gives JDN = JD at 12:00 UTC, so we add (UTChours-12)/24
+    function getJD(dateObj){
+      const jdn = toJD(dateObj); // JDN = JD at 12:00 UTC
+      const h = dateObj.getUTCHours() + dateObj.getUTCMinutes()/60 + dateObj.getUTCSeconds()/3600;
+      return jdn + (h - 12) / 24;
     }
-    function altDeg(ra_h,dec,lstD,lat){
-      const ha=(lstD-ra_h*15+360)%360;
-      const haR=ha*Math.PI/180,dR=dec*Math.PI/180,lR=lat*Math.PI/180;
-      return Math.asin(Math.max(-1,Math.min(1,Math.sin(dR)*Math.sin(lR)+Math.cos(dR)*Math.cos(lR)*Math.cos(haR))))*180/Math.PI;
+
+    // getLocalSiderealTime: returns LST in degrees for a full JD and observer longitude (degrees E)
+    function getLocalSiderealTime(jd, lon_deg){
+      const T = (jd - 2451545.0) / 36525.0;
+      // GMST in degrees (IAU formula)
+      let gst = 280.46061837
+              + 360.98564736629 * (jd - 2451545.0)
+              + 0.000387933 * T * T
+              - T * T * T / 38710000.0;
+      gst = ((gst % 360) + 360) % 360;
+      return ((gst + lon_deg) % 360 + 360) % 360;
     }
-    function getAltCurve(ra_h,dec,date){
-      const pts=[];
-      const jd0=toJD(date);
-      // Use proper timezone offset from browser (minutes, convert to hours)
+
+    // altDeg: altitude of object given Hour Angle (from LST-RA), dec, and observer lat
+    function altDeg(ra_h, dec, lstD, lat){
+      const ha  = ((lstD - ra_h * 15) % 360 + 360) % 360;
+      const haR = ha  * Math.PI / 180;
+      const dR  = dec * Math.PI / 180;
+      const lR  = lat * Math.PI / 180;
+      return Math.asin(
+        Math.max(-1, Math.min(1,
+          Math.sin(dR)*Math.sin(lR) + Math.cos(dR)*Math.cos(lR)*Math.cos(haR)
+        ))
+      ) * 180 / Math.PI;
+    }
+
+    // getAltCurve: altitude points for every 30 min, night-centered (18:00 → 06:00 next day)
+    // h = fractional local hour (18..30, where 24=midnight, 30=06:00 next morning)
+    // Handles midnight crossing correctly via UTC date offset
+    function getAltCurve(ra_h, dec, date){
+      if(!ra_h && ra_h !== 0) return [];
+      if(isNaN(dec) || isNaN(userLat) || isNaN(userLon)) return [];
+      const pts = [];
       const tzOffsetH = -date.getTimezoneOffset() / 60;
-      for(let h=0;h<24;h+=0.5){
-        // h = local clock time; convert to UTC for JD calc
-        const hUTC = h - tzOffsetH;
-        const jd = jd0 + hUTC/24;
-        pts.push({h, alt:altDeg(ra_h,dec,lstDeg(jd,userLon),userLat)});
+      // Night-centered window: 18:00 to 06:00 next day (12 hours, 25 points at 0.5h steps)
+      for(let h = 18; h <= 30; h += 0.5){
+        // h may exceed 24 (post-midnight). localH = h % 24, dayOffset tracks the day
+        const localH = h % 24;
+        const dayOffset = h >= 24 ? 1 : 0; // next calendar day if past midnight
+        // Convert local hour to UTC
+        const hUTC = ((localH - tzOffsetH) % 24 + 24) % 24;
+        // Build UTC Date, accounting for day boundary
+        const baseMs = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate() + dayOffset,
+          Math.floor(hUTC), Math.round((hUTC % 1) * 60), 0);
+        const utcDate = new Date(baseMs);
+        const jd  = getJD(utcDate);
+        const lst = getLocalSiderealTime(jd, userLon);
+        const alt = altDeg(ra_h, dec, lst, userLat);
+        pts.push({ h, alt: isNaN(alt) ? -90 : alt });
       }
       return pts;
     }
     function lunaPhase(date){
-      const jd=toJD(date)+0.5;
+      // Use JD at noon UTC of the observation date
+      const jd = toJD(date) + 0.5; // +0.5 → JD at midnight UTC (standard reference)
       const T=(jd-2451545)/36525;
       const D=((297.85+445267.1115*T)%360+360)%360;
       return Math.round((0.5-0.5*Math.cos(D*Math.PI/180))*100);
@@ -1060,9 +1204,25 @@
     }
 
     // ── DRAW ALTITUDE CHART ──
-    function drawAlt(pts){
+    function drawAlt(pts, drawDate){
       const canvas=document.getElementById('altCanvas');
       if(!canvas)return;
+      if(!pts||pts.length===0){
+        // Draw empty state for circumpolar-always-below objects
+        const dpr=window.devicePixelRatio||1;
+        const W=canvas.offsetWidth||600;
+        const H=180;
+        canvas.style.height=H+'px';
+        canvas.width=W*dpr; canvas.height=H*dpr;
+        const ctx=canvas.getContext('2d');
+        ctx.scale(dpr,dpr);
+        ctx.fillStyle='rgba(252,129,129,0.15)';
+        ctx.fillRect(0,0,W,H);
+        ctx.fillStyle='#fc8181';ctx.font='bold 12px monospace';ctx.textAlign='center';
+        ctx.fillText('Object not visible from this latitude tonight',W/2,H/2);
+        return;
+      }
+      const date = drawDate || getDate();
       const dpr=window.devicePixelRatio||1;
       const W=canvas.offsetWidth||600;
       const H=180;
@@ -1074,23 +1234,26 @@
       const cw=W-PAD.l-PAD.r, ch=H-PAD.t-PAD.b;
       const MIN_A=-10,MAX_A=90,RANGE=100;
       const yOf=a=>PAD.t+ch-((Math.min(Math.max(a,MIN_A),MAX_A)-MIN_A)/RANGE)*ch;
-      const xOf=h=>PAD.l+(h/24)*cw;
+      // Night-centered axis: h goes from 18 to 30 (06:00 next day)
+      // xOf maps h in [18,30] to canvas x
+      const H_START=18, H_END=30, H_SPAN=H_END-H_START; // 12 hours span
+      const xOf=h=>PAD.l+((h-H_START)/H_SPAN)*cw;
+      // Midnight (h=24) is at the center
+      const xMid=xOf(24);
 
-      // ── NIGHT SHADING (20:00-06:00) ──
-      [[0,6],[20,24]].forEach(([s,e])=>{
-        ctx.fillStyle='rgba(15,25,55,0.7)';
-        ctx.fillRect(xOf(s),PAD.t,xOf(e)-xOf(s),ch);
-      });
-      // Night labels
-      ctx.fillStyle='rgba(120,140,220,0.6)';
-      ctx.font='bold 8px monospace'; ctx.textAlign='center';
-      ctx.fillText('🌙 NIGHT',xOf(3),PAD.t+11);
-      ctx.fillText('🌙 NIGHT',xOf(22),PAD.t+11);
-      // Day label
-      ctx.fillStyle='rgba(200,160,50,0.4)';
-      ctx.fillText('☀ DAY',xOf(13),PAD.t+11);
+      // ── Background: entire plot is night ──
+      ctx.fillStyle='rgba(15,25,55,0.55)';
+      ctx.fillRect(PAD.l,PAD.t,cw,ch);
 
-      // grid lines altitude
+      // Midnight center line
+      ctx.strokeStyle='rgba(120,140,220,0.35)';ctx.lineWidth=1;
+      ctx.setLineDash([4,4]);
+      ctx.beginPath();ctx.moveTo(xMid,PAD.t);ctx.lineTo(xMid,PAD.t+ch);ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle='rgba(120,140,220,0.7)';ctx.font='bold 8px monospace';ctx.textAlign='center';
+      ctx.fillText('00:00',xMid,PAD.t+ch+13);
+
+      // altitude grid lines
       ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=0.5;
       [0,15,30,45,60,75,90].forEach(deg=>{
         const y=yOf(deg);
@@ -1099,13 +1262,17 @@
         ctx.fillText(deg+'°',PAD.l-4,y+3);
       });
 
-      // time grid + labels
-      [0,2,4,6,8,10,12,14,16,18,20,22].forEach(hr=>{
+      // time grid + labels (every 2h: 18,20,22,24,02,04,06)
+      [18,20,22,24,26,28,30].forEach(hr=>{
         const x=xOf(hr);
+        if(x < PAD.l || x > PAD.l+cw+1) return;
         ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=0.5;
         ctx.beginPath();ctx.moveTo(x,PAD.t);ctx.lineTo(x,PAD.t+ch);ctx.stroke();
-        ctx.fillStyle='#6a7490';ctx.textAlign='center';ctx.font='8px monospace';
-        ctx.fillText(String(hr).padStart(2,'0')+':00',x,PAD.t+ch+13);
+        const dispHr = hr % 24; // 24→0, 26→2, 28→4, 30→6
+        if(hr !== 24){ // 24 already drawn as 00:00 above
+          ctx.fillStyle='#6a7490';ctx.textAlign='center';ctx.font='8px monospace';
+          ctx.fillText(String(dispHr).padStart(2,'0')+':00',x,PAD.t+ch+13);
+        }
       });
 
       // horizon line
@@ -1124,46 +1291,95 @@
       ctx.fillStyle='rgba(183,148,244,0.7)';ctx.textAlign='left';ctx.font='8px monospace';
       ctx.fillText('30° min',PAD.l+4,y30-3);
 
-      // best night window highlight (night hours above 30°)
-      const nightPts=pts.filter(p=>(p.h<=6||p.h>=20)&&p.alt>=30);
-      if(nightPts.length>=2){
-        const ns=nightPts[0].h, ne=nightPts[nightPts.length-1].h;
-        ctx.fillStyle='rgba(104,211,145,0.10)';
-        ctx.fillRect(xOf(ns),PAD.t,xOf(ne)-xOf(ns),ch);
-        ctx.strokeStyle='rgba(104,211,145,0.35)';ctx.lineWidth=1;
-        ctx.setLineDash([]);
-        ctx.strokeRect(xOf(ns),PAD.t,xOf(ne)-xOf(ns),ch);
-        // label
-        ctx.fillStyle='rgba(104,211,145,0.8)';ctx.font='bold 8px monospace';ctx.textAlign='center';
-        ctx.fillText('BEST',xOf((ns+ne)/2),PAD.t+22);
+      // ── sunAltAtHour: for the night-centered h (18..30) ──
+      function sunAltAtHour(h) {
+        const localH = h % 24;
+        const dayOffset = h >= 24 ? 1 : 0;
+        const tzOffsetH = -date.getTimezoneOffset() / 60;
+        const hUTC = ((localH - tzOffsetH) % 24 + 24) % 24;
+        const utcDate = new Date(Date.UTC(
+          date.getFullYear(), date.getMonth(), date.getDate() + dayOffset,
+          Math.floor(hUTC), Math.round((hUTC % 1) * 60), 0
+        ));
+        const jd = getJD(utcDate);
+        const n = jd - 2451545.0;
+        const L = ((280.460 + 0.9856474 * n) % 360 + 360) % 360;
+        const g = ((357.528 + 0.9856003 * n) % 360 + 360) % 360;
+        const lambda = L + 1.915 * Math.sin(g * Math.PI / 180) + 0.020 * Math.sin(2 * g * Math.PI / 180);
+        const epsilon = 23.439 - 0.0000004 * n;
+        const sunRa_h = (Math.atan2(
+          Math.cos(epsilon * Math.PI / 180) * Math.sin(lambda * Math.PI / 180),
+          Math.cos(lambda * Math.PI / 180)
+        ) * 180 / Math.PI + 360) % 360 / 15;
+        const sinDec = Math.sin(epsilon * Math.PI / 180) * Math.sin(lambda * Math.PI / 180);
+        const sunDec = Math.asin(Math.max(-1, Math.min(1, sinDec))) * 180 / Math.PI;
+        const lst = getLocalSiderealTime(jd, userLon);
+        return altDeg(sunRa_h, sunDec, lst, userLat);
       }
 
-      // curve fill
-      ctx.beginPath();
-      pts.forEach((p,i)=>{const x=xOf(p.h),y=yOf(p.alt);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
-      ctx.lineTo(xOf(pts[pts.length-1].h),yHor);ctx.lineTo(PAD.l,yHor);ctx.closePath();
-      const gr=ctx.createLinearGradient(0,PAD.t,0,PAD.t+ch);
-      gr.addColorStop(0,'rgba(183,148,244,0.35)');gr.addColorStop(1,'rgba(183,148,244,0.02)');
-      ctx.fillStyle=gr;ctx.fill();
+      // Green best window: alt ≥ 30° and sun < -12°
+      const bestPts = pts.filter(p => p.alt >= 30 && sunAltAtHour(p.h) < -12);
+      if(bestPts.length >= 2){
+        let segStart = bestPts[0].h, segPrev = bestPts[0].h;
+        for(let i=1; i<=bestPts.length; i++){
+          const isLast = i === bestPts.length;
+          const gap = isLast ? true : (bestPts[i].h - bestPts[i-1].h) > 1.0;
+          if(gap){
+            const ns=segStart, ne=segPrev;
+            const x0=xOf(ns), x1=xOf(ne+0.5);
+            const segW=x1-x0;
+            if(segW>0){
+              ctx.fillStyle='rgba(104,211,145,0.12)';
+              ctx.fillRect(x0,PAD.t,segW,ch);
+              ctx.strokeStyle='rgba(104,211,145,0.4)';ctx.lineWidth=1;
+              ctx.setLineDash([]);
+              ctx.strokeRect(x0,PAD.t,segW,ch);
+              ctx.fillStyle='rgba(104,211,145,0.85)';ctx.font='bold 8px monospace';ctx.textAlign='center';
+              ctx.fillText('BEST',x0+segW/2,PAD.t+22);
+            }
+            if(!isLast) segStart = bestPts[i].h;
+          }
+          if(!isLast) segPrev = bestPts[i].h;
+        }
+      }
 
-      // curve line
-      ctx.beginPath();
-      pts.forEach((p,i)=>{const x=xOf(p.h),y=yOf(p.alt);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
-      ctx.strokeStyle='#b794f4';ctx.lineWidth=2;ctx.stroke();
+      // curve fill (gradient)
+      if(pts.length >= 2){
+        ctx.beginPath();
+        pts.forEach((p,i)=>{const x=xOf(p.h),y=yOf(p.alt);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+        ctx.lineTo(xOf(pts[pts.length-1].h),yHor);ctx.lineTo(xOf(pts[0].h),yHor);ctx.closePath();
+        const gr=ctx.createLinearGradient(0,PAD.t,0,PAD.t+ch);
+        gr.addColorStop(0,'rgba(183,148,244,0.35)');gr.addColorStop(1,'rgba(183,148,244,0.02)');
+        ctx.fillStyle=gr;ctx.fill();
 
-      // peak dot + time label
-      let maxA=-99,maxH=0;
+        // curve line
+        ctx.beginPath();
+        pts.forEach((p,i)=>{const x=xOf(p.h),y=yOf(p.alt);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+        ctx.strokeStyle='#b794f4';ctx.lineWidth=2;ctx.stroke();
+      }
+
+      // peak dot + label
+      let maxA=-99,maxH=pts.length?pts[0].h:24;
       pts.forEach(p=>{if(p.alt>maxA){maxA=p.alt;maxH=p.h;}});
-      const cx=xOf(maxH),cy=yOf(maxA);
-      ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=0.8;
-      ctx.setLineDash([2,3]);
-      ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx,PAD.t+ch);ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.beginPath();ctx.arc(cx,cy,4,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
-      const peakHH=Math.floor(maxH)%24,peakMM=Math.round((maxH%1)*60);
-      const peakTime=String(peakHH).padStart(2,'0')+':'+String(peakMM).padStart(2,'0');
-      ctx.fillStyle='rgba(255,255,255,0.95)';ctx.textAlign='center';ctx.font='bold 9px monospace';
-      ctx.fillText(Math.round(maxA)+'° '+peakTime,cx,cy-9);
+      if(maxA > -99){
+        const cx=xOf(maxH),cy=yOf(maxA);
+        ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=0.8;
+        ctx.setLineDash([2,3]);
+        ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx,PAD.t+ch);ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.beginPath();ctx.arc(cx,cy,4,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+        const peakHH=Math.floor(maxH)%24,peakMM=Math.round((maxH%1)*60);
+        const peakTime=String(peakHH).padStart(2,'0')+':'+String(peakMM).padStart(2,'0');
+        ctx.fillStyle='rgba(255,255,255,0.95)';ctx.textAlign='center';ctx.font='bold 9px monospace';
+        // Keep label inside canvas
+        const labelX=Math.max(PAD.l+22,Math.min(PAD.l+cw-22,cx));
+        ctx.fillText(Math.round(maxA)+'° '+peakTime,labelX,cy-9);
+      }
+
+      // Night labels at edges
+      ctx.fillStyle='rgba(120,140,220,0.55)';ctx.font='bold 8px monospace';
+      ctx.textAlign='left'; ctx.fillText('🌙',PAD.l+4,PAD.t+11);
+      ctx.textAlign='right'; ctx.fillText('🌙',PAD.l+cw-4,PAD.t+11);
     }
 
     function getDate(){
@@ -1251,7 +1467,7 @@
       {id:"M75",name:"Sagittarius Cluster",type:"Globular",mag:"8.5",diff:"Intermediate",ra_h:20,dec:-21,settings:{exp:"40s",gain:"90",frames:"50/80",filter:"Astro",noteExp:"Long",noteGain:"High",noteFiltro:"Natural light"},months:[7,8,9],advice:"Compact, concentrated."},
       {id:"M76",name:"Little Dumbbell",type:"Planetary",mag:"10.1",diff:"Hard",ra_h:1,dec:51,settings:{exp:"45s",gain:"100",frames:"50/80",filter:"Dual-band",noteExp:"Very long",noteGain:"Very High",noteFiltro:"Enhances Ha/OIII"},months:[9,10,11],advice:"Small, faint."},
       {id:"M77",name:"Cetus Galaxy",type:"Galaxy",mag:"8.9",diff:"Intermediate",ra_h:2,dec:0,settings:{exp:"45s",gain:"95",frames:"50/80",filter:"Astro",noteExp:"Long",noteGain:"High",noteFiltro:"Natural light"},months:[9,10,11,0],advice:"Seyfert spiral."},
-      {id:"M78",name:"Orion Nebula",type:"Nebula",mag:"8.0",diff:"Intermediate",ra_h:5,dec:0,settings:{exp:"35s",gain:"80",frames:"40/60",filter:"Dual-band",noteExp:"Long",noteGain:"High",noteFiltro:"Enhances Ha/OIII"},months:[11,0,1,2],advice:"Reflection."},
+      {id:"M78",name:"Orion Nebula",type:"Nebula",mag:"8.0",diff:"Intermediate",ra_h:5,dec:0,settings:{exp:"35s",gain:"80",frames:"40/60",filter:"Astro",noteExp:"Long",noteGain:"High",noteFiltro:"Broadband Astro — reflection nebula"},months:[11,0,1,2],advice:"Reflection nebula. Astro filter recommended."},
       {id:"M79",name:"Lepus Cluster",type:"Globular",mag:"7.7",diff:"Intermediate",ra_h:5,dec:-24,settings:{exp:"35s",gain:"80",frames:"40/60",filter:"Astro",noteExp:"Long",noteGain:"High",noteFiltro:"Natural light"},months:[11,0,1,2],advice:"Low southern sky."},
       {id:"M80",name:"Scorpius Cluster",type:"Globular",mag:"7.3",diff:"Intermediate",ra_h:16,dec:-22,settings:{exp:"30s",gain:"75",frames:"40/60",filter:"Astro",noteExp:"Medium",noteGain:"Medium",noteFiltro:"Natural light"},months:[5,6,7,8],advice:"Compact. Nova 1860."},
       {id:"M81",name:"Bode's Galaxy",type:"Galaxy",mag:"6.9",diff:"Easy",ra_h:9,dec:69,settings:{exp:"30s",gain:"90",frames:"50/80",filter:"Astro",noteExp:"Long spirals",noteGain:"High",noteFiltro:"Natural light"},months:[1,2,3,4],advice:"Classic pair with M82."},
@@ -1294,7 +1510,7 @@
       {id:"NGC 884",name:"Double Cluster",type:"Open",mag:"6.1",diff:"Easy",ra_h:2,dec:57,settings:{exp:"20s",gain:"55",frames:"40/60",filter:"Astro",noteExp:"Short",noteGain:"Medium",noteFiltro:"Natural light"},months:[9,10,11,0],advice:"With NGC 869."},
       {id:"NGC 457",name:"Owl Cluster",type:"Open",mag:"6.4",diff:"Easy",ra_h:1,dec:58,settings:{exp:"20s",gain:"50",frames:"40/60",filter:"Astro",noteExp:"Short",noteGain:"Medium",noteFiltro:"Natural light"},months:[9,10,11,0],advice:"Owl shape."},
       {id:"NGC 1499",name:"California Nebula",type:"Nebula",mag:"6.0",diff:"Intermediate",ra_h:4,dec:36,settings:{exp:"45s",gain:"90",frames:"50/80",filter:"Dual-band",noteExp:"Very long",noteGain:"High",noteFiltro:"Enhances Ha/OIII"},months:[11,0,1,2],advice:"Huge. Ha essential."},
-      {id:"NGC 7023",name:"Iris Nebula",type:"Nebula",mag:"6.8",diff:"Intermediate",ra_h:21,dec:68,settings:{exp:"30s",gain:"75",frames:"40/60",filter:"Dual-band",noteExp:"Medium",noteGain:"Medium",noteFiltro:"Enhances Ha/OIII"},months:[8,9,10],advice:"Blue reflection."},
+      {id:"NGC 7023",name:"Iris Nebula",type:"Nebula",mag:"6.8",diff:"Intermediate",ra_h:21,dec:68,settings:{exp:"30s",gain:"75",frames:"40/60",filter:"Astro",noteExp:"Medium",noteGain:"Medium",noteFiltro:"Broadband Astro — reflection nebula, not emission"},months:[8,9,10],advice:"Blue reflection nebula. Astro filter recommended, not Dual-band."},
       {id:"NGC 6543",name:"Cat's Eye Nebula",type:"Planetary",mag:"8.1",diff:"Hard",ra_h:17,dec:66,settings:{exp:"45s",gain:"100",frames:"50/80",filter:"Dual-band",noteExp:"Very long",noteGain:"Very High",noteFiltro:"Enhances Ha/OIII"},months:[7,8,9,10],advice:"Complex. Shells."},
       {id:"NGC 7293",name:"Helix Nebula",type:"Planetary",mag:"7.6",diff:"Intermediate",ra_h:22,dec:-20,settings:{exp:"35s",gain:"80",frames:"50/80",filter:"Dual-band",noteExp:"Long",noteGain:"High",noteFiltro:"Enhances Ha/OIII"},months:[8,9,10],advice:"Closest. Wide field."},
       {id:"NGC 2392",name:"Eskimo Nebula",type:"Planetary",mag:"10.1",diff:"Hard",ra_h:7,dec:20,settings:{exp:"45s",gain:"100",frames:"50/80",filter:"Dual-band",noteExp:"Very long",noteGain:"Very High",noteFiltro:"Enhances Ha/OIII"},months:[12,0,1,2],advice:"Small, complex."},
@@ -1346,6 +1562,46 @@
         const obj = dwarfDB.find(x => x.id === currentId);
         if (obj) show(obj);
       }
+      // hotfix #2: refresh Tonight's Best with new coordinates
+      tonightPage = 1;
+      buildTonight();
+    }
+
+    // ── HOTFIX #5: FILTER LOGIC BY NEBULA TYPE ──
+    // Determines the recommended filter based on object type and subtype.
+    // Emission nebulae (HII, SNR, PN) → Dual-band
+    // Reflection nebulae → Astro
+    // Galaxies / Globulars / Open clusters → Astro (or Clear)
+    function getRecommendedFilter(obj) {
+      const type  = (obj.type  || '').toLowerCase();
+      const advice = (obj.advice || '').toLowerCase();
+      const name   = (obj.name  || '').toLowerCase();
+
+      // Planetary nebulae → emission → Dual-band
+      if (type.includes('planetary')) return 'Dual-band';
+
+      // Supernova remnants → emission → Dual-band
+      if (type.includes('remnant') || type.includes('supernova')) return 'Dual-band';
+
+      // Globulars, open clusters, star clouds, asterisms, double stars → Astro
+      if (type.includes('globular') || type.includes('open') ||
+          type.includes('star cloud') || type.includes('asterism') ||
+          type.includes('double')) return 'Astro';
+
+      // Galaxies → Astro
+      if (type.includes('galaxy')) return 'Astro';
+
+      // Nebulae: distinguish emission vs reflection
+      if (type.includes('nebula') || type.includes('nebul')) {
+        // Reflection nebula indicators
+        const isReflection = /reflection|reflect|blue|dust|scattered/i.test(advice + ' ' + name);
+        if (isReflection) return 'Astro'; // reflection nebula → broadband
+        // Default for generic nebulae: emission → Dual-band
+        return 'Dual-band';
+      }
+
+      // Fallback: use the dataset value
+      return obj.settings.filter;
     }
 
     function renderMonths(arr) {
@@ -1608,7 +1864,7 @@
 
     const THUMBNAILS = {
       "M1": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Crab_Nebula.jpg/320px-Crab_Nebula.jpg",
-      "M2": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/sixty/M2_Globular_Cluster_by_HST.jpg/320px-M2_Globular_Cluster_by_HST.jpg",
+      "M2": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/M2_Globular_Cluster_by_HST.jpg/320px-M2_Globular_Cluster_by_HST.jpg",
       "M3": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Messier_3_Hubble_StarClusters.jpg/320px-Messier_3_Hubble_StarClusters.jpg",
       "M4": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/M4_Globular_cluster_Hubble_Space_Telescope.jpg/320px-M4_Globular_cluster_Hubble_Space_Telescope.jpg",
       "M5": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/M5s.jpg/320px-M5s.jpg",
@@ -1706,7 +1962,7 @@
       const bortle = parseInt(document.getElementById('bortleSelect').value) || 5;
       // Get adapted exposure & gain (already calculated in show())
       const adjData = applyCorrections(obj.settings.gain, obj.settings.exp,
-        window._lastLuna||0, obj.settings.filter, bortle, obj.type, obj.advice);
+        window._lastLuna||0, obj._effectiveFilter || obj.settings.filter, bortle, obj.type, obj.advice);
 
       const expSec  = adjData.exp;
       const optMin  = calcOptimalMinutes(obj, expSec);
@@ -1731,7 +1987,7 @@
       document.getElementById('qsExp').innerText     = expSec + 's';
       document.getElementById('qsExpNote').innerText = adjData.expBase !== adjData.exp ? 'adapted from ' + adjData.expBase + 's' : 'base value';
       document.getElementById('qsGain').innerText    = adjData.gain;
-      document.getElementById('qsFilter').innerText  = obj.settings.filter;
+      document.getElementById('qsFilter').innerText  = obj._effectiveFilter || obj.settings.filter;
       document.getElementById('qsDuration').innerText= sessionMin + ' min';
       document.getElementById('qsDurNote').innerText = durNote;
       document.getElementById('qsFrames').innerText  = frameCount;
@@ -1755,41 +2011,62 @@
       document.getElementById('objAdvice').innerText = obj.advice;
       const b = document.getElementById('objDiff');
       b.innerText = obj.diff==='Easy'?'EASY':obj.diff==='Hard'?'HARD':'INTERMEDIATE';
-      b.className = `badge ${obj.diff === 'Easy' ? 'easy' : obj.diff === 'Hard' ? 'hard' : 'medium'}`;
+      b.className = `badge ${obj.diff==='Easy'?'easy':obj.diff==='Hard'?'hard':'intermediate'}`;
       document.getElementById('valExp').innerText = obj.settings.exp;
       document.getElementById('noteExp').innerText = obj.settings.noteExp;
       document.getElementById('valGain').innerText = obj.settings.gain;
       document.getElementById('noteGain').innerText = obj.settings.noteGain;
       document.getElementById('valFrames').innerText = obj.settings.frames;
-      document.getElementById('valFiltro').innerText = obj.settings.filter;
-      document.getElementById('noteFiltro').innerText = obj.settings.noteFiltro;
+      // hotfix #5: override filter using type-aware logic
+      const recommendedFilter = getRecommendedFilter(obj);
+      const filterChanged = recommendedFilter !== obj.settings.filter;
+      document.getElementById('valFiltro').innerHTML = filterChanged
+        ? obj.settings.filter + ' <span style="color:#f6ad55;font-size:0.8rem;font-weight:700">\u2192 ' + recommendedFilter + '</span>'
+        : recommendedFilter;
+      const filterNoteEl = document.getElementById('noteFiltro');
+      if (filterChanged) {
+        const isReflection = /reflection|reflect|blue|dust|scattered/i.test((obj.advice||'') + ' ' + (obj.name||''));
+        filterNoteEl.innerHTML = isReflection
+          ? '<span style="color:#f6ad55;">Reflection nebula: broadband Astro filter recommended (not Dual-band)</span>'
+          : obj.settings.noteFiltro;
+      } else {
+        filterNoteEl.innerText = obj.settings.noteFiltro;
+      }
+      // Store overridden filter for downstream calculations
+      obj._effectiveFilter = recommendedFilter;
       renderMonths(obj.months);
 
       const date = getDate();
 
       // ── ALTITUDE ──
       const pts = getAltCurve(obj.ra_h, obj.dec, date);
-      let maxA=-99, maxH=0;
+      let maxA=-99, maxH=24;
       pts.forEach(p=>{if(p.alt>maxA){maxA=p.alt;maxH=p.h;}});
       const hh=Math.floor(maxH)%24, mm=Math.round((maxH%1)*60);
       const culm=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
-      const nightPts=pts.filter(p=>(p.h>=20||p.h<=6)&&p.alt>=30);
-      let winStr='Below 30° all night';
+      const nightPts=pts.filter(p=>p.alt>=30);  // all pts are already night (18-30h)
+      let winStr;
       if(nightPts.length){
         const fmt=h=>{const hh2=Math.floor(h)%24,mm2=Math.round((h%1)*60);return String(hh2).padStart(2,'0')+':'+String(mm2).padStart(2,'0');};
-        winStr=fmt(nightPts[0].h)+' – '+fmt(nightPts[nightPts.length-1].h);
+        winStr='✅ '+fmt(nightPts[0].h)+' – '+fmt(nightPts[nightPts.length-1].h)+' (alt >30°)';
+      } else {
+        const nightAllPts=pts; // all pts are already night window
+        const maxNightAlt=nightAllPts.length?Math.round(Math.max(...nightAllPts.map(p=>p.alt))):-99;
+        const bestMonths=obj.months&&obj.months.length?obj.months.map(m=>monthsNames[m]).join(', '):'—';
+        winStr='⚠️ Not optimal tonight (max '+maxNightAlt+'°). Best months: '+bestMonths;
       }
+      const altDispMax = maxA > -90 ? Math.round(maxA) : '—';
       const altCls=maxA>=60?'color:#68d391':maxA>=30?'color:#f6ad55':'color:#fc8181';
       document.getElementById('altDateLabel').innerText=date.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
       document.getElementById('altLocLabel').innerText='Lat '+userLat.toFixed(1)+'° Lon '+userLon.toFixed(1)+'°';
       document.getElementById('altStats').innerHTML=
-        '<span style="'+altCls+'">Max alt: <strong>'+Math.round(maxA)+'°</strong></span>'+
-        '<span>Culmination: <strong>'+culm+'</strong></span>'+
+        '<span style="'+altCls+'">Max alt: <strong>'+(maxA>-90?Math.round(maxA)+'°':'Always below horizon')+'</strong></span>'+
+        (maxA>-90?'<span>Culmination: <strong>'+culm+'</strong></span>':'')+
         '<span>Window &gt;30° (night): <strong>'+winStr+'</strong></span>';
 
       // ── MOON ──
       const luna=lunaPhase(date);
-      const limp=lunaImpact(luna,obj.settings.filter,obj.type);
+      const limp=lunaImpact(luna, obj._effectiveFilter || obj.settings.filter, obj.type);
       document.getElementById('lunarIcon').innerText=lunaIcon(luna);
       document.getElementById('lunarPct').innerText=luna+'% illuminated';
       document.getElementById('lunarLabel').innerText=date.toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
@@ -1800,8 +2077,8 @@
 
       // ── VALORI ADATTIVI ──
       const bortle = parseInt(document.getElementById('bortleSelect').value) || 5;
-      const adj = applyCorrections(obj.settings.gain, obj.settings.exp, luna, obj.settings.filter, bortle, obj.type, obj.advice);
-      const banner = buildBanner(adj, luna, bortle, obj.settings.filter, obj.type);
+      const adj = applyCorrections(obj.settings.gain, obj.settings.exp, luna, obj._effectiveFilter || obj.settings.filter, bortle, obj.type, obj.advice);
+      const banner = buildBanner(adj, luna, bortle, obj._effectiveFilter || obj.settings.filter, obj.type);
 
       // Aggiorna i valori mostrati con quelli adattivi
       const expEl  = document.getElementById('valExp');
@@ -1863,7 +2140,7 @@
         // Force layout recalc before drawing
         const c = document.getElementById('altCanvas');
         if(c){ c.style.height='180px'; }
-        setTimeout(()=>drawAlt(pts), 50);
+        setTimeout(()=>drawAlt(pts, date), 50);
       });
     }
 
@@ -1872,20 +2149,67 @@
       if(o) show(o);
     }
 
-    function find() {
-      const q = document.getElementById('search').value.trim().toUpperCase();
-      if(!q) return;
-      const o = dwarfDB.find(x => x.id === q || x.name.toUpperCase().includes(q));
-      if(o) show(o);
-      else alert('Object not found. Try M42, M31, M51...');
+    // ── SEARCH — real-time suggestions ──
+    function closeSuggestions(){
+      const el=document.getElementById('searchSuggestions');
+      if(el) el.remove();
     }
 
-    document.getElementById('search').addEventListener('keyup', e => {
-      if(e.key === 'Enter') find();
-      if(!e.target.value) {
-        document.getElementById('sheet').style.display = 'none';
-        document.getElementById('tipsSection').style.display = 'none';
+    function find(){
+      const q=(document.getElementById('search').value||'').trim().toUpperCase();
+      if(!q){alert('Enter an object name or ID to search.');return;}
+      // Exact ID match first, then partial name/type
+      let o=dwarfDB.find(x=>x.id.toUpperCase()===q);
+      if(!o) o=dwarfDB.find(x=>
+        x.id.toUpperCase().includes(q)||
+        x.name.toUpperCase().includes(q)||
+        x.type.toUpperCase().includes(q)
+      );
+      if(o){ show(o); closeSuggestions(); document.getElementById('search').value=''; }
+      else alert('Object not found. Try: M42, Andromeda, Nebula…');
+    }
+
+    document.getElementById('search').addEventListener('input', function(){
+      closeSuggestions();
+      const q=this.value.trim().toUpperCase();
+      if(!q||q.length<1) return;
+      const matches=dwarfDB.filter(x=>
+        x.id.toUpperCase().includes(q)||
+        x.name.toUpperCase().includes(q)||
+        x.type.toUpperCase().includes(q)
+      ).slice(0,8);
+      if(!matches.length) return;
+      const box=document.createElement('div');
+      box.id='searchSuggestions';
+      box.style.cssText='position:absolute;top:100%;left:0;right:0;z-index:999;background:var(--bg-panel);border:1px solid var(--accent);border-top:none;border-radius:0 0 10px 10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.5);';
+      box.innerHTML=matches.map(o=>{
+        const ic=o.type.toLowerCase().includes('galaxy')?'🌌':o.type.toLowerCase().includes('globular')?'✨':o.type.toLowerCase().includes('open')?'⭐':o.type.toLowerCase().includes('planetary')?'💫':o.type.toLowerCase().includes('remnant')?'💥':'🌫️';
+        const dc=o.diff==='Easy'?'#68d391':o.diff==='Hard'?'#fc8181':'#f6ad55';
+        return `<div onclick="load('${o.id}');document.getElementById('search').value='';closeSuggestions();" style="display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='rgba(183,148,244,0.1)'" onmouseout="this.style.background='transparent'">
+          <span>${ic}</span>
+          <span style="font-family:var(--font-mono);font-weight:700;color:var(--accent);min-width:65px;">${o.id}</span>
+          <span style="flex:1;font-size:0.85rem;">${o.name}</span>
+          <span style="font-size:0.72rem;color:var(--text-sub);">${o.type}</span>
+          <span style="font-size:0.68rem;font-weight:700;color:${dc};padding:2px 6px;border-radius:3px;border:1px solid ${dc};">${o.diff==='Intermediate'?'INT':o.diff.toUpperCase()}</span>
+        </div>`;
+      }).join('');
+      const sb=document.querySelector('.search-box');
+      sb.style.position='relative';
+      sb.appendChild(box);
+    });
+
+    document.getElementById('search').addEventListener('keyup',e=>{
+      if(e.key==='Enter') find();
+      if(e.key==='Escape'){ closeSuggestions(); e.target.value=''; }
+      if(!e.target.value.trim()){
+        closeSuggestions();
+        document.getElementById('sheet').style.display='none';
+        document.getElementById('tipsSection').style.display='none';
       }
+    });
+
+    document.addEventListener('click',e=>{
+      if(!e.target.closest('.search-box')) closeSuggestions();
     });
 
     function toggleGuide() {
@@ -1900,45 +2224,55 @@
       }
     }
 
-    document.getElementById('obsDate').addEventListener('change'
-, ()=>{
+    document.getElementById('obsDate').addEventListener('change', ()=>{
       if(window._lastObj) show(window._lastObj);
+      tonightPage=1; buildTonight();
     });
 
-    // ── WEATHER ──
+    // ── WEATHER (Open-Meteo, 5s timeout) ──
     async function loadWeather() {
       const lat = parseFloat(document.getElementById('latInput').value) || userLat;
       const lon = parseFloat(document.getElementById('lonInput').value) || userLon;
-      // Using Open-Meteo (free, no API key needed!)
       const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,cloud_cover,wind_speed_10m,weather_code&wind_speed_unit=kmh`;
+      const ctrl = new AbortController();
+      const timer = setTimeout(()=>ctrl.abort(), 5000);
+      const wRow = document.getElementById('weatherRow');
+      if(wRow){ wRow.style.display='block'; document.getElementById('wSeeing').innerText='⏳ Loading…'; }
       try {
-        const r = await fetch(url);
+        const r = await fetch(url, {signal: ctrl.signal});
+        clearTimeout(timer);
+        if(!r.ok) throw new Error('HTTP '+r.status);
         const d = await r.json();
         const c = d.current;
-        const clouds = c.cloud_cover;
-        const humidity = c.relative_humidity_2m;
-        const temp = c.temperature_2m;
-        const wind = c.wind_speed_10m;
-        // Seeing estimate from humidity + wind
+        const clouds=c.cloud_cover, humidity=c.relative_humidity_2m, temp=c.temperature_2m, wind=c.wind_speed_10m;
         let seeing, seeingNote;
-        if(clouds > 80) { seeing = '❌ Poor'; seeingNote = 'Too cloudy'; }
-        else if(humidity > 85) { seeing = '⚠️ Fair'; seeingNote = 'High humidity'; }
-        else if(wind > 30) { seeing = '⚠️ Fair'; seeingNote = 'High wind'; }
-        else if(clouds < 20 && humidity < 60 && wind < 15) { seeing = '✅ Good'; seeingNote = 'Good conditions'; }
-        else { seeing = '🔶 Moderate'; seeingNote = 'Check later'; }
-        const cloudCol = clouds > 60 ? '#fc8181' : clouds > 30 ? '#f6ad55' : '#68d391';
-        const humCol = humidity > 80 ? '#fc8181' : humidity > 60 ? '#f6ad55' : '#68d391';
-        document.getElementById('wClouds').innerHTML = `<span style="color:${cloudCol}">${clouds}%</span>`;
-        document.getElementById('wHumidity').innerHTML = `<span style="color:${humCol}">${humidity}%</span>`;
-        document.getElementById('wTemp').innerText = temp + '°C';
-        document.getElementById('wWind').innerText = wind + ' km/h';
-        document.getElementById('wSeeing').innerText = seeing;
-        document.getElementById('wSeeingNote').innerText = seeingNote;
-        document.getElementById('wLocation').innerText = `Lat ${lat.toFixed(2)}° Lon ${lon.toFixed(2)}°`;
-        document.getElementById('wDesc').innerText = weatherDesc(c.weather_code);
-        document.getElementById('weatherRow').style.display = 'block';
+        if(clouds>80){seeing='❌ Poor';seeingNote='Too cloudy';}
+        else if(humidity>85){seeing='⚠️ Fair';seeingNote='High humidity';}
+        else if(wind>30){seeing='⚠️ Fair';seeingNote='High wind';}
+        else if(clouds<20&&humidity<60&&wind<15){seeing='✅ Good';seeingNote='Good conditions';}
+        else{seeing='🔶 Moderate';seeingNote='Check later';}
+        const cloudCol=clouds>60?'#fc8181':clouds>30?'#f6ad55':'#68d391';
+        const humCol=humidity>80?'#fc8181':humidity>60?'#f6ad55':'#68d391';
+        document.getElementById('wClouds').innerHTML=`<span style="color:${cloudCol}">${clouds}%</span>`;
+        document.getElementById('wHumidity').innerHTML=`<span style="color:${humCol}">${humidity}%</span>`;
+        document.getElementById('wTemp').innerText=temp+'°C';
+        document.getElementById('wWind').innerText=wind+' km/h';
+        document.getElementById('wSeeing').innerText=seeing;
+        document.getElementById('wSeeingNote').innerText=seeingNote;
+        document.getElementById('wLocation').innerText=`Lat ${lat.toFixed(2)}° Lon ${lon.toFixed(2)}°`;
+        document.getElementById('wDesc').innerText=weatherDesc(c.weather_code);
+        if(wRow) wRow.style.display='block';
       } catch(e) {
-        alert('Weather data unavailable. Check your connection.');
+        clearTimeout(timer);
+        const isTimeout=e.name==='AbortError';
+        document.getElementById('wSeeing').innerText=isTimeout?'⏱️ Timeout':'❌ Offline';
+        document.getElementById('wSeeingNote').innerText=isTimeout?'Request exceeded 5s':'No connection';
+        ['wClouds','wHumidity','wTemp','wWind'].forEach(id=>{
+          const el=document.getElementById(id); if(el) el.innerHTML='—';
+        });
+        document.getElementById('wLocation').innerText=isTimeout?'Request timed out':'Weather unavailable';
+        document.getElementById('wDesc').innerText=isTimeout?'Check connection speed':'Connect to load data';
+        if(wRow) wRow.style.display='block';
       }
     }
 
@@ -2045,15 +2379,238 @@
 
     window.addEventListener('resize', ()=>{
       if(window._lastObj){
-        const pts=getAltCurve(window._lastObj.ra_h,window._lastObj.dec,getDate());
+        const d = getDate();
+        const pts=getAltCurve(window._lastObj.ra_h,window._lastObj.dec,d);
         requestAnimationFrame(()=>{
         // Force layout recalc before drawing
         const c = document.getElementById('altCanvas');
         if(c){ c.style.height='180px'; }
-        setTimeout(()=>drawAlt(pts), 50);
+        setTimeout(()=>drawAlt(pts, d), 50);
       });
       }
     });
+
+    // ── TONIGHT'S BEST ──
+    let tonightFilter = 'all';
+    let tonightOpen = true;
+    const TONIGHT_PAGE_SIZE = 24; // hotfix #1
+    let tonightPage = 1;          // hotfix #1
+
+    function toggleTonight() {
+      tonightOpen = !tonightOpen;
+      document.getElementById('tonightContent').style.display = tonightOpen ? 'block' : 'none';
+      document.getElementById('tonightArrow').style.transform = tonightOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
+    }
+
+    function tonightLoadMore() {
+      tonightPage++;
+      renderTonight(window._tonightResults || []);
+    }
+
+    function setTonightFilter(f) {
+      tonightFilter = f;
+      tonightPage = 1; // hotfix #1: reset page on filter change
+      const ids = ['tbtnAll','tbtnGal','tbtnNeb','tbtnGlob','tbtnEasy','tbtnInt','tbtnHard'];
+      const vals = ['all','Galaxy','Nebula','Globular','Easy','Intermediate','Hard'];
+      ids.forEach((id, i) => {
+        const btn = document.getElementById(id);
+        if(!btn) return;
+        const active = vals[i] === f;
+        btn.style.background = active ? 'var(--accent)' : 'transparent';
+        btn.style.color = active ? '#000' : 'var(--text-sub)';
+        btn.style.borderColor = active ? 'var(--accent)' : 'var(--border)';
+        btn.style.fontWeight = active ? '700' : '400';
+      });
+      // Sync mobile select
+      const sel = document.getElementById('tonightFilterSelect');
+      if(sel && sel.value !== f) sel.value = f;
+      renderTonight(window._tonightResults || []);
+    }
+
+    function buildTonight() {
+      const date = getDate();
+      const results = [];
+      dwarfDB.forEach(obj => {
+        const pts = getAltCurve(obj.ra_h, obj.dec, date);
+        // Night window: h in [18,30] covers 18:00–06:00, all pts are night by definition
+        const nightPts = pts.filter(p => p.alt >= 30);
+        if (!nightPts.length) return;
+        let maxAlt = -99;
+        nightPts.forEach(p => { if (p.alt > maxAlt) maxAlt = p.alt; });
+        const fmt = h => { const hh = Math.floor(h) % 24, mm = Math.round((h % 1) * 60); return String(hh).padStart(2,'0') + ':' + String(mm).padStart(2,'0'); };
+        const winStart = fmt(nightPts[0].h);
+        const winEnd   = fmt(nightPts[nightPts.length - 1].h);
+        const winHours = nightPts.length / (60 / 0.5); // 0.5h steps
+        results.push({ obj, maxAlt, winStart, winEnd, winHours });
+      });
+      // Sort by maxAlt descending
+      results.sort((a, b) => b.maxAlt - a.maxAlt);
+      window._tonightResults = results;
+      renderTonight(results);
+      // Update subtitle
+      const subtitle = document.getElementById('tonightSubtitle');
+      if (subtitle) subtitle.innerText = `${results.length} objects visible tonight · ${date.toLocaleDateString('en-GB', {day:'2-digit', month:'short'})} · Lat ${userLat.toFixed(1)}°`;
+    }
+
+    function renderTonight(results) {
+      const grid = document.getElementById('tonightGrid');
+      const count = document.getElementById('tonightCount');
+      let filtered = results;
+      if (tonightFilter === 'Easy' || tonightFilter === 'Intermediate' || tonightFilter === 'Hard') {
+        filtered = results.filter(r => r.obj.diff === tonightFilter);
+      } else if (tonightFilter !== 'all') {
+        filtered = results.filter(r => r.obj.type.toLowerCase().includes(tonightFilter.toLowerCase()));
+      }
+      if (!filtered.length) {
+        grid.innerHTML = '<div style="color:var(--text-sub);font-size:0.85rem;grid-column:1/-1;text-align:center;padding:20px 0;">No objects matching this filter visible tonight.</div>';
+        if (count) count.innerText = '';
+        return;
+      }
+      const totalVisible = filtered.length;
+      const pageItems = filtered.slice(0, tonightPage * TONIGHT_PAGE_SIZE);
+      const hasMore = totalVisible > pageItems.length;
+      if (count) count.innerText = `${totalVisible} object${totalVisible !== 1 ? 's' : ''} visible`;
+      grid.innerHTML = pageItems.map(r => {
+        const obj = r.obj;
+        const altColor = r.maxAlt >= 60 ? '#68d391' : r.maxAlt >= 40 ? '#f6ad55' : '#fc8181';
+        const barWidth = Math.round(Math.min(100, (r.maxAlt / 90) * 100));
+        const diffClass = obj.diff === 'Easy' ? 'color:#68d391;background:rgba(104,211,145,0.15);border:1px solid #68d391;'
+                        : obj.diff === 'Hard' ? 'color:#fc8181;background:rgba(252,129,129,0.15);border:1px solid #fc8181;'
+                        : 'color:#f6ad55;background:rgba(246,173,85,0.15);border:1px solid #f6ad55;';
+        const typeIcon = obj.type.toLowerCase().includes('galaxy') ? '🌌'
+                       : obj.type.toLowerCase().includes('globular') ? '✨'
+                       : obj.type.toLowerCase().includes('open') ? '⭐'
+                       : obj.type.toLowerCase().includes('planetary') ? '💫'
+                       : obj.type.toLowerCase().includes('remnant') ? '💥'
+                       : '🌫️';
+        return `<div class="tonight-card" onclick="load('${obj.id}')">
+          <span class="tc-diff" style="${diffClass}">${obj.diff === 'Easy' ? 'EASY' : obj.diff === 'Hard' ? 'HARD' : 'INT'}</span>
+          <div class="tc-id">${typeIcon} ${obj.id}</div>
+          <div class="tc-name">${obj.name}</div>
+          <div class="tc-alt" style="color:${altColor}">↑ ${Math.round(r.maxAlt)}°</div>
+          <div class="tc-win">🕐 ${r.winStart} – ${r.winEnd}</div>
+          <div class="tc-bar"><div class="tc-bar-fill" style="width:${barWidth}%;background:${altColor};"></div></div>
+        </div>`;
+      }).join('');
+      // ── LOAD MORE (hotfix #1) ──
+      if (hasMore) {
+        const remaining = totalVisible - pageItems.length;
+        const loadMoreEl = document.createElement('div');
+        loadMoreEl.style.cssText = 'grid-column:1/-1;text-align:center;padding:10px 0 4px;';
+        loadMoreEl.innerHTML = `<button onclick="tonightLoadMore()" style="font-size:0.8rem;padding:8px 24px;border-radius:7px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;font-weight:700;">⬇ Load more (${remaining} remaining)</button>`;
+        grid.appendChild(loadMoreEl);
+      }
+    }
+
+    // Auto-build on page load after a short delay (so userLat/Lon are set)
+    setTimeout(() => buildTonight(), 800);
+
+  </script>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       PWA — SERVICE WORKER REGISTRATION
+       Network First + skipWaiting: users always get the latest deploy.
+       ═══════════════════════════════════════════════════════════════════════ -->
+
+  <!-- Update banner (hidden by default, shown when a new SW is waiting) -->
+  <div id="swUpdateBanner" style="
+    display:none; position:fixed; bottom:0; left:0; right:0; z-index:9999;
+    background:linear-gradient(90deg,#0e0f14 0%,#1a1b24 100%);
+    border-top:2px solid #b794f4;
+    padding:12px 20px; gap:12px;
+    align-items:center; justify-content:space-between; flex-wrap:wrap;
+    box-shadow:0 -4px 24px rgba(183,148,244,0.2);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+    <span style="color:#e2e8f0;font-size:0.88rem;">
+      🔭 <strong style="color:#b794f4;">New version available!</strong>
+      &nbsp;Tap to update DWARF mini PRO.
+    </span>
+    <div style="display:flex;gap:8px;">
+      <button id="swUpdateBtn" style="
+        background:#b794f4; color:#000; border:none; padding:8px 18px;
+        border-radius:7px; font-weight:700; font-size:0.85rem; cursor:pointer;">
+        ⬆ Update now
+      </button>
+      <button id="swDismissBtn" style="
+        background:transparent; color:#718096; border:1px solid #2a2d37;
+        padding:8px 14px; border-radius:7px; font-size:0.82rem; cursor:pointer;">
+        Later
+      </button>
+    </div>
+  </div>
+
+  <script>
+  // ── SERVICE WORKER REGISTRATION ─────────────────────────────────────────────
+  (function registerSW() {
+    if (!('serviceWorker' in navigator)) return; // browser doesn't support SW
+
+    let waitingSW = null;
+
+    navigator.serviceWorker.register('./sw.js', { scope: './' })
+      .then(reg => {
+        console.log('[App] SW registered, scope:', reg.scope);
+
+        // ── A. SW already waiting from a previous install ──
+        if (reg.waiting) {
+          waitingSW = reg.waiting;
+          showUpdateBanner();
+        }
+
+        // ── B. A new SW finishes installing while the page is open ──
+        reg.addEventListener('updatefound', () => {
+          const newSW = reg.installing;
+          if (!newSW) return;
+          newSW.addEventListener('statechange', () => {
+            // 'installed' + active controller = update ready
+            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+              waitingSW = newSW;
+              showUpdateBanner();
+            }
+          });
+        });
+
+        // ── C. Poll for updates every 30 minutes ──
+        //    (catches the case where the user leaves the tab open all night)
+        setInterval(() => reg.update(), 30 * 60 * 1000);
+      })
+      .catch(err => console.warn('[App] SW registration failed:', err));
+
+    // ── When the SW activates (after skipWaiting) reload the page ──────────
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) {
+        refreshing = true;
+        window.location.reload();
+      }
+    });
+
+    // ── Update banner helpers ───────────────────────────────────────────────
+    function showUpdateBanner() {
+      const banner = document.getElementById('swUpdateBanner');
+      if (banner) banner.style.display = 'flex';
+    }
+
+    function hideUpdateBanner() {
+      const banner = document.getElementById('swUpdateBanner');
+      if (banner) banner.style.display = 'none';
+    }
+
+    function applyUpdate() {
+      if (waitingSW) {
+        // Tell the waiting SW to skip waiting → triggers controllerchange above
+        waitingSW.postMessage({ type: 'SKIP_WAITING' });
+      }
+      hideUpdateBanner();
+    }
+
+    // Wire up buttons
+    document.addEventListener('DOMContentLoaded', () => {
+      const updateBtn  = document.getElementById('swUpdateBtn');
+      const dismissBtn = document.getElementById('swDismissBtn');
+      if (updateBtn)  updateBtn.addEventListener('click', applyUpdate);
+      if (dismissBtn) dismissBtn.addEventListener('click', hideUpdateBanner);
+    });
+  })();
   </script>
 </body>
 </html>
