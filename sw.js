@@ -9,7 +9,7 @@
 // ── 1. BUMP THIS VERSION STRING ON EVERY DEPLOY ──────────────────────────────
 //  (changing it forces the browser to treat this as a brand-new SW file,
 //   which triggers the install → activate → skipWaiting cycle immediately)
-const CACHE_VERSION = 'dwarf-v1.0.0';
+const CACHE_VERSION = 'dwarf-v1.2.0';
 
 // ── 2. ASSETS TO PRE-CACHE ON INSTALL (app shell) ────────────────────────────
 //  These are fetched from the network once and stored so the app shell is

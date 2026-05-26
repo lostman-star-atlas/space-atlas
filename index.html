@@ -390,83 +390,188 @@
 
     <!-- QUICK GUIDE -->
     <div style="margin-bottom:16px;">
-      <button onclick="toggleGuide()" 
+      <button onclick="toggleGuide()"
         style="width:100%;display:flex;align-items:center;justify-content:space-between;background:rgba(183,148,244,0.08);border:1px solid rgba(183,148,244,0.2);border-radius:10px;padding:12px 16px;cursor:pointer;color:var(--text-main);font-family:var(--font-mono);font-size:0.85rem;font-weight:700;">
         <span>📖 Quick Guide — How to use DWARF mini PRO</span>
         <span id="guideArrow" style="transition:transform 0.2s;font-size:0.8rem;">▼</span>
       </button>
-      <div id="guideContent" style="display:none;background:var(--bg-panel);border:1px solid rgba(183,148,244,0.15);border-top:none;border-radius:0 0 10px 10px;padding:16px 20px;">
-        
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
-          
-          <!-- STEP 1 -->
-          <div style="background:var(--bg-row);border-radius:8px;padding:14px;border:1px solid var(--border);">
-            <div style="font-family:var(--font-mono);font-size:0.78rem;font-weight:700;color:var(--accent);margin-bottom:8px;">① LOCATION & DATE</div>
-            <ul style="font-size:0.8rem;color:var(--text-sub);line-height:1.8;list-style:none;padding:0;">
-              <li>📍 Tap <strong style="color:var(--text-main);">GPS</strong> to auto-detect your position</li>
-              <li>🌆 Or pick a city from the dropdown</li>
-              <li>📅 Set tonight's date</li>
-              <li>🌃 Choose your <strong style="color:var(--text-main);">Bortle</strong> sky scale (1=dark, 9=city)</li>
-              <li>🌤️ Tap <strong style="color:var(--text-main);">Weather</strong> for real-time sky conditions</li>
-            </ul>
-          </div>
+      <div id="guideContent" style="display:none;background:var(--bg-panel);border:1px solid rgba(183,148,244,0.15);border-top:none;border-radius:0 0 10px 10px;padding:20px 24px;">
 
-          <!-- STEP 2 -->
-          <div style="background:var(--bg-row);border-radius:8px;padding:14px;border:1px solid var(--border);">
-            <div style="font-family:var(--font-mono);font-size:0.78rem;font-weight:700;color:var(--accent);margin-bottom:8px;">② SEARCH YOUR TARGET</div>
-            <ul style="font-size:0.8rem;color:var(--text-sub);line-height:1.8;list-style:none;padding:0;">
-              <li>🔍 Type M42, NGC 891, Andromeda...</li>
-              <li>⚡ Or tap one of the quick-pick buttons</li>
-              <li>📋 The full data sheet appears below</li>
-            </ul>
+        <!-- ── SECTION 1: LOCATION ── -->
+        <div style="margin-bottom:22px;">
+          <div style="font-family:var(--font-mono);font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);">📍 1 · First things first: set your location</div>
+          <p style="font-size:0.82rem;color:var(--text-sub);line-height:1.7;margin-bottom:10px;">When you open the app, the first thing to do is set your observing location. You can do this in three ways:</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:10px;">
+            <div style="background:var(--bg-row);border-radius:8px;padding:11px 13px;border:1px solid var(--border);font-size:0.8rem;color:var(--text-sub);line-height:1.6;">
+              🛰️ <strong style="color:var(--text-main);">Auto GPS</strong> — tap "📍 GPS" and the app detects where you are. Most accurate method.
+            </div>
+            <div style="background:var(--bg-row);border-radius:8px;padding:11px 13px;border:1px solid var(--border);font-size:0.8rem;color:var(--text-sub);line-height:1.6;">
+              📋 <strong style="color:var(--text-main);">Pick from the list</strong> — observatories, mountain sites, cities. Already built in.
+            </div>
+            <div style="background:var(--bg-row);border-radius:8px;padding:11px 13px;border:1px solid var(--border);font-size:0.8rem;color:var(--text-sub);line-height:1.6;">
+              ✏️ <strong style="color:var(--text-main);">Manual coordinates</strong> — type your latitude and longitude directly.
+            </div>
           </div>
-
-          <!-- STEP 3 -->
-          <div style="background:var(--bg-row);border-radius:8px;padding:14px;border:1px solid var(--border);">
-            <div style="font-family:var(--font-mono);font-size:0.78rem;font-weight:700;color:var(--accent);margin-bottom:8px;">③ READ THE DATA SHEET</div>
-            <ul style="font-size:0.8rem;color:var(--text-sub);line-height:1.8;list-style:none;padding:0;">
-              <li>⚙️ <strong style="color:var(--text-main);">Banner</strong>: shows how values are adapted to tonight</li>
-              <li>⏱️ Exposure & gain: base → adapted (arrow)</li>
-              <li>📐 <strong style="color:var(--text-main);">Altitude curve</strong>: 🌙 night zones, 🟢 green = best window</li>
-              <li>🌙 Moon phase + impact on your object</li>
-              <li>📅 Green months = best visibility from your area</li>
-            </ul>
+          <div style="background:rgba(183,148,244,0.07);border-radius:7px;padding:10px 13px;border:1px solid rgba(183,148,244,0.18);font-size:0.78rem;color:var(--text-sub);line-height:1.6;">
+            💡 Your location tells the app which objects you can see tonight, when they reach their highest point in the sky, and how much light pollution surrounds you.
           </div>
-
-          <!-- STEP 4 -->
-          <div style="background:var(--bg-row);border-radius:8px;padding:14px;border:1px solid rgba(104,211,145,0.2);border-left:3px solid #68d391;">
-            <div style="font-family:var(--font-mono);font-size:0.78rem;font-weight:700;color:#68d391;margin-bottom:8px;">④ SESSION PLANNER ⚡</div>
-            <ul style="font-size:0.8rem;color:var(--text-sub);line-height:1.8;list-style:none;padding:0;">
-              <li>🤖 <strong style="color:var(--text-main);">Recommended</strong>: the app calculates everything —
-                exposure, gain, total session duration and exact frame count for tonight's conditions</li>
-              <li style="margin-top:6px;">⏱️ <strong style="color:var(--text-main);">I have limited time</strong>: type how many minutes you have available.
-                The app keeps the optimal exposure and tells you exactly how many frames you can capture in your window — and what quality to expect</li>
-              <li style="margin-top:6px;">📊 Quality rating: 🌟 Excellent · ✅ Good · 🔶 Decent · ⚠️ Minimal · ❌ Too short</li>
-            </ul>
-          </div>
-
-          <!-- STEP 5 -->
-          <div style="background:var(--bg-row);border-radius:8px;padding:14px;border:1px solid var(--border);">
-            <div style="font-family:var(--font-mono);font-size:0.78rem;font-weight:700;color:var(--accent);margin-bottom:8px;">⑤ LOG & EXPORT</div>
-            <ul style="font-size:0.8rem;color:var(--text-sub);line-height:1.8;list-style:none;padding:0;">
-              <li>✍️ Add optional notes (weather, seeing...)</li>
-              <li>➕ Tap <strong style="color:var(--text-main);">Add</strong> to log the session</li>
-              <li>⬇️ <strong style="color:var(--text-main);">CSV</strong> button appears — export all your sessions</li>
-              <li>🔭 Tap <strong style="color:var(--text-main);">Stellarium</strong> to open target in Stellarium Web</li>
-            </ul>
-          </div>
-
-          <!-- TIP BOX -->
-          <div style="background:rgba(246,173,85,0.06);border-radius:8px;padding:14px;border:1px solid rgba(246,173,85,0.2);">
-            <div style="font-family:var(--font-mono);font-size:0.78rem;font-weight:700;color:#f6ad55;margin-bottom:8px;">💡 PRO TIP</div>
-            <p style="font-size:0.8rem;color:var(--text-sub);line-height:1.7;">
-              The adapted values (exposure, gain) are <strong style="color:var(--text-main);">smart starting points</strong>, not absolute rules. 
-              Every sky is different — use them as a baseline and fine-tune based on your live preview in the DWARF app.
-              The Session Planner is your best tool for planning before going outside! 🌌
-            </p>
-          </div>
-
         </div>
+
+        <!-- ── SECTION: BORTLE ── -->
+        <div style="margin-bottom:22px;">
+          <div style="font-family:var(--font-mono);font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);">🌆 Light Pollution (Bortle Scale)</div>
+          <p style="font-size:0.82rem;color:var(--text-sub);line-height:1.7;margin-bottom:10px;">Once the app finds your location it automatically estimates how dark your sky is on a scale from 1 to 9. You can correct it manually if you know the site better than the estimate.</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:6px;">
+            <div style="background:var(--bg-row);border-radius:7px;padding:9px 12px;border:1px solid rgba(104,211,145,0.25);font-size:0.78rem;color:var(--text-sub);line-height:1.5;"><span style="color:#68d391;font-weight:700;">1–2</span> &nbsp;Pristine dark sky, remote site</div>
+            <div style="background:var(--bg-row);border-radius:7px;padding:9px 12px;border:1px solid rgba(104,211,145,0.15);font-size:0.78rem;color:var(--text-sub);line-height:1.5;"><span style="color:#68d391;font-weight:700;">3–4</span> &nbsp;Rural sky, little light pollution</div>
+            <div style="background:var(--bg-row);border-radius:7px;padding:9px 12px;border:1px solid rgba(246,173,85,0.2);font-size:0.78rem;color:var(--text-sub);line-height:1.5;"><span style="color:#f6ad55;font-weight:700;">5–6</span> &nbsp;Suburban sky</div>
+            <div style="background:var(--bg-row);border-radius:7px;padding:9px 12px;border:1px solid rgba(252,129,129,0.2);font-size:0.78rem;color:var(--text-sub);line-height:1.5;"><span style="color:#fc8181;font-weight:700;">7–9</span> &nbsp;Urban / city centre, orange sky glow</div>
+          </div>
+        </div>
+
+        <!-- ── SECTION: WEATHER ── -->
+        <div style="margin-bottom:22px;">
+          <div style="font-family:var(--font-mono);font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);">🌤️ 2 · Weather & Sky Quality</div>
+          <p style="font-size:0.82rem;color:var(--text-sub);line-height:1.7;margin-bottom:12px;">Press the <strong style="color:var(--text-main);">Weather</strong> button to load real-time conditions. From cloud cover, humidity and wind speed the app computes two numbers that matter most for astrophotography:</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-bottom:12px;">
+            <!-- Seeing -->
+            <div style="background:var(--bg-row);border-radius:8px;padding:13px;border:1px solid var(--border);">
+              <div style="font-size:0.78rem;font-weight:700;color:var(--text-main);margin-bottom:8px;">🌠 Astronomical Seeing (1–5 stars)</div>
+              <p style="font-size:0.78rem;color:var(--text-sub);line-height:1.6;margin-bottom:8px;">Measures how stable the atmosphere is above you. Even with a clear sky, turbulent air makes stars wobble and ruins focus.</p>
+              <div style="display:flex;flex-direction:column;gap:4px;font-size:0.75rem;color:var(--text-sub);">
+                <span><span style="color:#fc8181;">★ 1/5</span> — Very Poor · stars dancing, photos blurry</span>
+                <span><span style="color:#fc8181;">★★ 2/5</span> — Poor · stacking efficiency reduced</span>
+                <span><span style="color:#f6ad55;">★★★ 3/5</span> — Fair · acceptable for bright targets</span>
+                <span><span style="color:#68d391;">★★★★ 4/5</span> — Good · great for most DSO imaging</span>
+                <span><span style="color:#68d391;">★★★★★ 5/5</span> — Excellent · exceptional stability, don't miss it!</span>
+              </div>
+            </div>
+            <!-- Transparency -->
+            <div style="background:var(--bg-row);border-radius:8px;padding:13px;border:1px solid var(--border);">
+              <div style="font-size:0.78rem;font-weight:700;color:var(--text-main);margin-bottom:8px;">🔍 Sky Transparency</div>
+              <p style="font-size:0.78rem;color:var(--text-sub);line-height:1.6;margin-bottom:8px;">How well starlight passes through the atmosphere. High humidity and thin haze reduce it even without visible cloud cover.</p>
+              <div style="display:flex;flex-direction:column;gap:4px;font-size:0.75rem;color:var(--text-sub);">
+                <span><span style="color:#fc8181;font-weight:700;">🔴 Low</span> — haze or high humidity, significant scatter</span>
+                <span><span style="color:#f6ad55;font-weight:700;">🟡 Medium</span> — moderate atmospheric haze</span>
+                <span><span style="color:#68d391;font-weight:700;">🟢 High</span> — good photon throughput</span>
+                <span><span style="color:#68d391;font-weight:700;">🟢 Superb</span> — crystal-clear air, a night to remember</span>
+              </div>
+            </div>
+          </div>
+          <!-- Pill -->
+          <div style="background:rgba(104,211,145,0.07);border-radius:7px;padding:10px 13px;border:1px solid rgba(104,211,145,0.2);font-size:0.78rem;color:var(--text-sub);line-height:1.6;">
+            🏅 <strong style="color:var(--text-main);">The "Night Quality" badge</strong> summarises everything at a glance:&nbsp;
+            <span style="color:#68d391;font-weight:700;">🟢 Excellent</span> ·
+            <span style="color:#f6ad55;font-weight:700;">🟡 Good</span> ·
+            <span style="color:#f6ad55;font-weight:700;">🟠 Marginal</span> ·
+            <span style="color:#fc8181;font-weight:700;">🔴 Poor</span>
+          </div>
+        </div>
+
+        <!-- ── SECTION: SMART BANNERS ── -->
+        <div style="margin-bottom:22px;">
+          <div style="font-family:var(--font-mono);font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);">⚠️ 3 · Smart Banners — the app warns you automatically</div>
+          <p style="font-size:0.82rem;color:var(--text-sub);line-height:1.7;margin-bottom:10px;">When conditions are not suited to your selected mode, a coloured alert appears just below the weather section. You don't need to check anything manually.</p>
+          <div style="display:flex;flex-direction:column;gap:7px;">
+            <div style="background:rgba(246,173,85,0.08);border:1px solid rgba(246,173,85,0.25);border-radius:7px;padding:10px 13px;font-size:0.78rem;color:var(--text-sub);line-height:1.6;">
+              ⚠️ <strong style="color:#f6ad55;">Poor seeing with Deep Sky / Milky Way</strong> — if seeing is 1 or 2 out of 5, the app suggests shorter exposures and discarding the worst frames during stacking.
+            </div>
+            <div style="background:rgba(183,148,244,0.08);border:1px solid rgba(183,148,244,0.25);border-radius:7px;padding:10px 13px;font-size:0.78rem;color:var(--text-sub);line-height:1.6;">
+              ☁️ <strong style="color:var(--accent);">Time-Lapse cloud opportunity</strong> — if you're in Time-Lapse mode with cloud cover between 20% and 60%, the app flags that moving clouds are perfect for a dynamic video.
+            </div>
+            <div style="background:rgba(104,211,145,0.07);border:1px solid rgba(104,211,145,0.2);border-radius:7px;padding:10px 13px;font-size:0.78rem;color:var(--text-sub);line-height:1.6;">
+              ✅ <strong style="color:#68d391;">Excellent seeing for Star Trails</strong> — with seeing 4 or 5 out of 5, the app confirms trails will be sharp and well-defined.
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SEZIONE VIA LATTEA ── -->
+        <div style="margin-bottom:22px;">
+          <div style="font-family:var(--font-mono);font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);">🌌 4 · Modalità Via Lattea — i blocchi automatici</div>
+          <p style="font-size:0.82rem;color:var(--text-sub);line-height:1.7;margin-bottom:10px;">Quando selezioni la modalità <strong style="color:var(--text-main);">Milky Way</strong>, l'app controlla subito quattro cose:</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;">
+            <div style="background:var(--bg-row);border-radius:7px;padding:10px 13px;border:1px solid rgba(252,129,129,0.2);font-size:0.78rem;color:var(--text-sub);line-height:1.6;">
+              🌆 <strong style="color:#fc8181;">Bortle &gt; 4</strong> — avviso rosso: il nucleo galattico sarà lavato via dalla luce artificiale. Devi spostarti in un posto più buio.
+            </div>
+            <div style="background:var(--bg-row);border-radius:7px;padding:10px 13px;border:1px solid rgba(252,129,129,0.2);font-size:0.78rem;color:var(--text-sub);line-height:1.6;">
+              🌙 <strong style="color:#fc8181;">Luna &gt; 30%</strong> — avviso rosso: aspetta una notte con luna più sottile. Anche una falce rovina le foto della Via Lattea.
+            </div>
+            <div style="background:var(--bg-row);border-radius:7px;padding:10px 13px;border:1px solid rgba(252,129,129,0.2);font-size:0.78rem;color:var(--text-sub);line-height:1.6;">
+              📅 <strong style="color:#fc8181;">Stagione sbagliata</strong> — il nucleo è visibile solo da <strong style="color:var(--text-main);">marzo a ottobre</strong>. Da novembre a febbraio l'app ti avvisa che non è visibile stanotte.
+            </div>
+            <div style="background:var(--bg-row);border-radius:7px;padding:10px 13px;border:1px solid rgba(246,173,85,0.2);font-size:0.78rem;color:var(--text-sub);line-height:1.6;">
+              💨 <strong style="color:#f6ad55;">Vento &gt; 30 km/h</strong> — avviso arancione: stabilizza bene il treppiede.
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SEZIONE CALCOLATORI ── -->
+        <div style="margin-bottom:22px;">
+          <div style="font-family:var(--font-mono);font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);">🧮 5 · I calcolatori di sessione</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;">
+
+            <!-- Time-Lapse -->
+            <div style="background:var(--bg-row);border-radius:8px;padding:13px;border:1px solid var(--border);">
+              <div style="font-size:0.78rem;font-weight:700;color:var(--text-main);margin-bottom:7px;">🎞️ Time-Lapse</div>
+              <p style="font-size:0.78rem;color:var(--text-sub);line-height:1.6;margin-bottom:8px;">Inserisci quanto vuoi che duri il video finale (secondi) e i frame al secondo. L'app calcola:</p>
+              <ul style="font-size:0.75rem;color:var(--text-sub);line-height:1.7;list-style:none;padding:0;margin:0;">
+                <li>📸 <strong style="color:var(--text-main);">Frame necessari</strong> — quante foto scattare</li>
+                <li>⏱️ <strong style="color:var(--text-main);">Tempo di ripresa</strong> — quanto stare fuori</li>
+                <li>💾 <strong style="color:var(--text-main);">Spazio SD</strong> — quanti GB occuperà</li>
+                <li>⚡ <strong style="color:var(--text-main);">Rapporto di velocità</strong> — es. 90× più veloce del reale</li>
+              </ul>
+              <div style="margin-top:9px;background:rgba(252,129,129,0.08);border:1px solid rgba(252,129,129,0.25);border-radius:6px;padding:7px 10px;font-size:0.74rem;color:#fc8181;line-height:1.5;">
+                ⚠️ Il <strong>deflicker</strong> è obbligatorio in post-produzione — senza correzione il video lampeggerà. Blocca sempre Bilanciamento Bianco e Esposizione in modalità manuale.
+              </div>
+            </div>
+
+            <!-- Star Trails -->
+            <div style="background:var(--bg-row);border-radius:8px;padding:13px;border:1px solid var(--border);">
+              <div style="font-size:0.78rem;font-weight:700;color:var(--text-main);margin-bottom:7px;">🌠 Star Trails</div>
+              <p style="font-size:0.78rem;color:var(--text-sub);line-height:1.6;margin-bottom:8px;">Inserisci quanto lunghe vuoi le scie (minuti). L'app calcola frame, durata reale, spazio SD e consumo batteria stimato.</p>
+              <ul style="font-size:0.75rem;color:var(--text-sub);line-height:1.7;list-style:none;padding:0;margin:0 0 9px 0;">
+                <li>🧭 Punta a <strong style="color:var(--text-main);">Nord</strong> per cerchi concentrici attorno a Polaris</li>
+                <li>🧭 Punta a <strong style="color:var(--text-main);">Est/Ovest</strong> per archi drammatici nel paesaggio</li>
+                <li>⏱️ Mantieni il gap tra frame a <strong style="color:var(--text-main);">0–1 secondi</strong> per scie continue</li>
+              </ul>
+              <div style="background:rgba(246,173,85,0.08);border:1px solid rgba(246,173,85,0.22);border-radius:6px;padding:7px 10px;font-size:0.74rem;color:#f6ad55;line-height:1.5;">
+                🔋 Sessione oltre 1 ora? L'app ti avvisa: serve un <strong>power bank esterno</strong>, la batteria interna non basterà.
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── SEZIONE LOG E STARSTAX ── -->
+        <div style="margin-bottom:22px;">
+          <div style="font-family:var(--font-mono);font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);">⚙️ 6 · Log sessioni e StarStaX</div>
+          <p style="font-size:0.82rem;color:var(--text-sub);line-height:1.7;margin-bottom:10px;">Ogni volta che premi <strong style="color:var(--text-main);">+ Add</strong> per salvare una sessione in modalità Star Trails, il log mostra automaticamente il badge <span style="display:inline-flex;align-items:center;gap:3px;background:rgba(183,148,244,0.15);border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:1px 7px;font-size:0.72rem;font-weight:700;font-family:var(--font-mono);">⚙️ Ready for StarStaX</span></p>
+          <p style="font-size:0.82rem;color:var(--text-sub);line-height:1.7;margin-bottom:10px;">Quando esporti il log in <strong style="color:var(--text-main);">CSV</strong>, la colonna Note di ogni sessione Star Trails contiene già la dicitura: <em style="color:var(--text-main);">"Process with StarStaX using Gap Filling mode."</em> — così non dimentichi mai come elaborare quei frame, anche mesi dopo.</p>
+          <div style="background:rgba(183,148,244,0.07);border-radius:7px;padding:10px 13px;border:1px solid rgba(183,148,244,0.18);font-size:0.78rem;color:var(--text-sub);line-height:1.6;">
+            💡 <strong style="color:var(--text-main);">StarStaX</strong> è il software gratuito (Win/Mac/Linux) che unisce tutte le foto in un'unica immagine con le scie stellari. Usa la modalità <strong>Gap Filling</strong> per scie continue anche con gap di 1 secondo tra i frame.
+          </div>
+        </div>
+
+        <!-- ── FLUSSO RAPIDO ── -->
+        <div style="background:rgba(183,148,244,0.06);border-radius:8px;padding:14px 16px;border:1px solid rgba(183,148,244,0.18);">
+          <div style="font-family:var(--font-mono);font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">🚀 Il flusso ideale di ogni sessione</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            <span style="background:var(--bg-row);border:1px solid var(--border);border-radius:6px;padding:5px 11px;font-size:0.76rem;color:var(--text-sub);">① Imposta posizione</span>
+            <span style="color:var(--border);align-self:center;">→</span>
+            <span style="background:var(--bg-row);border:1px solid var(--border);border-radius:6px;padding:5px 11px;font-size:0.76rem;color:var(--text-sub);">② Scegli modalità</span>
+            <span style="color:var(--border);align-self:center;">→</span>
+            <span style="background:var(--bg-row);border:1px solid var(--border);border-radius:6px;padding:5px 11px;font-size:0.76rem;color:var(--text-sub);">③ Premi Weather</span>
+            <span style="color:var(--border);align-self:center;">→</span>
+            <span style="background:var(--bg-row);border:1px solid var(--border);border-radius:6px;padding:5px 11px;font-size:0.76rem;color:var(--text-sub);">④ Leggi i banner</span>
+            <span style="color:var(--border);align-self:center;">→</span>
+            <span style="background:var(--bg-row);border:1px solid var(--border);border-radius:6px;padding:5px 11px;font-size:0.76rem;color:var(--text-sub);">⑤ Usa il calcolatore</span>
+            <span style="color:var(--border);align-self:center;">→</span>
+            <span style="background:var(--bg-row);border:1px solid var(--border);border-radius:6px;padding:5px 11px;font-size:0.76rem;color:var(--text-sub);">⑥ Fotografa</span>
+            <span style="color:var(--border);align-self:center;">→</span>
+            <span style="background:var(--bg-row);border:1px solid var(--border);border-radius:6px;padding:5px 11px;font-size:0.76rem;color:#68d391;">⑦ Salva nel log 🌌</span>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -699,9 +804,10 @@
     <div id="bortleNotice" style="display:none;font-size:0.75rem;margin:4px 0 0 0;padding:4px 10px;border-radius:4px;"></div>
 
     <!-- WEATHER ROW -->
-    <div id="weatherRow" style="display:none;background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:12px 20px;margin-bottom:16px;">
-      <div style="font-size:0.7rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">🌤️ Real-time Weather — <span style="font-weight:400;color:var(--text-sub);">Seeing estimated from cloud cover, humidity &amp; wind</span></div>
-      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;">
+    <div id="weatherRow" style="display:none;background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:12px 20px;margin-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom:none;">
+      <div style="font-size:0.7rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">🌤️ Real-time Weather &amp; Sky Quality — <span style="font-weight:400;color:var(--text-sub);">Atmospheric parameters for astrophotography planning</span></div>
+      <!-- Row 1: basic weather -->
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:10px;">
         <div>
           <div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;">☁️ Cloud Cover</div>
           <div id="wClouds" style="font-family:var(--font-mono);font-size:1.1rem;font-weight:700;"></div>
@@ -719,7 +825,7 @@
           <div id="wWind" style="font-family:var(--font-mono);font-size:1.1rem;font-weight:700;"></div>
         </div>
         <div>
-          <div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;">🔭 Seeing</div>
+          <div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;">🔭 General Seeing</div>
           <div id="wSeeing" style="font-family:var(--font-mono);font-size:1.1rem;font-weight:700;"></div>
           <div id="wSeeingNote" style="font-size:0.72rem;color:var(--text-sub);"></div>
         </div>
@@ -728,7 +834,33 @@
           <div id="wDesc" style="font-size:0.8rem;color:var(--text-primary);margin-top:2px;font-weight:600;"></div>
         </div>
       </div>
+      <!-- Row 2: Advanced Sky Quality (Nightshift / Sky Tonight layer) -->
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;">
+        <!-- Astronomical Seeing score -->
+        <div>
+          <div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🌠 Astro Seeing</div>
+          <div style="display:flex;align-items:baseline;gap:6px;">
+            <div id="wAstroSeeingLabel" style="font-family:var(--font-mono);font-size:1.05rem;font-weight:700;">—</div>
+            <div id="wAstroSeeingStars" style="font-size:0.85rem;letter-spacing:1px;"></div>
+          </div>
+          <div id="wAstroSeeingNote" style="font-size:0.7rem;color:var(--text-sub);margin-top:2px;"></div>
+        </div>
+        <!-- Sky Transparency -->
+        <div>
+          <div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🔍 Sky Transparency</div>
+          <div id="wTransparency" style="font-family:var(--font-mono);font-size:1.05rem;font-weight:700;">—</div>
+          <div id="wTransparencyNote" style="font-size:0.7rem;color:var(--text-sub);margin-top:2px;"></div>
+        </div>
+        <!-- Imaging suitability pill -->
+        <div style="margin-left:auto;display:flex;align-items:center;">
+          <div id="wImagingSuit" style="font-size:0.78rem;font-weight:700;padding:5px 14px;border-radius:20px;border:1px solid var(--border);color:var(--text-sub);font-family:var(--font-mono);">—</div>
+        </div>
+      </div>
     </div>
+    <!-- Sky Quality Smart Banner (injected below weather card, shares the rounded card bottom) -->
+    <div id="skyQualityBanner" style="display:none;background:var(--bg-panel);border:1px solid var(--border);border-top:none;border-bottom-left-radius:12px;border-bottom-right-radius:12px;padding:0 20px 12px;margin-bottom:16px;"></div>
+    <!-- Spacer shown when weatherRow is hidden so margin collapses correctly -->
+    <div id="weatherSpacer" style="display:none;margin-bottom:16px;"></div>
 
     <!-- TONIGHT'S BEST -->
       <div id="tonightPanel" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;margin-bottom:20px;overflow:hidden;">
@@ -779,6 +911,15 @@
     </div>
 
     <div class="search-area">
+      <div style="margin-bottom: 15px;">
+        <label style="color: var(--accent); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 8px;">Observation Mode</label>
+        <select id="obsMode" onchange="switchObsMode(this.value)" style="width: 100%; background: #000; border: 1px solid var(--border); color: var(--accent); padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer;">
+          <option value="deep_sky">🌌 Deep Sky (Nebulae, Galaxies, Clusters)</option>
+          <option value="milky_way">🌌✨ Milky Way (Galactic Core)</option>
+          <option value="star_trails">💫 Star Trails (Long Exposure Stack)</option>
+          <option value="time_lapse">⏱️ Time-Lapse (Clouds, Moon, Planets)</option>
+        </select>
+      </div>
       <div class="search-box">
         <input type="text" id="search" placeholder="Search: M31, M42, Andromeda...">
         <button onclick="find()">🔍 SCAN</button>
@@ -799,6 +940,369 @@
       </div>
     </div>
 
+    <!-- ═══════════════════════════════════════════════════
+         MILKY WAY MODE PANEL
+    ════════════════════════════════════════════════════ -->
+    <div id="panel_milky_way" style="display:none;">
+      <!-- Alerts banner -->
+      <div id="mw_alerts" style="margin-bottom:16px;"></div>
+
+      <!-- Conditions banner -->
+      <div style="background:linear-gradient(135deg,rgba(183,148,244,0.08),rgba(183,148,244,0.15));border:2px solid var(--accent);border-radius:12px;padding:20px;margin-bottom:16px;">
+        <div style="color:var(--accent);font-size:1rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;">🌌 Milky Way — Ideal Conditions</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px;">
+          <div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);">
+            <div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">⏱️ Exposure</div>
+            <div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:var(--accent);">15–25 s</div>
+            <div style="font-size:0.75rem;color:var(--text-sub);">Avoid star trailing</div>
+          </div>
+          <div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);">
+            <div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">📶 Gain</div>
+            <div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:var(--accent);">60–80</div>
+            <div style="font-size:0.75rem;color:var(--text-sub);">Higher for darker skies</div>
+          </div>
+          <div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);">
+            <div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">⭕ Filter</div>
+            <div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:#68d391;">Astro / None</div>
+            <div style="font-size:0.75rem;color:var(--danger);">NO Dual-band!</div>
+          </div>
+          <div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);">
+            <div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🌆 Bortle Ideal</div>
+            <div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:#68d391;">≤ 4</div>
+            <div style="font-size:0.75rem;color:var(--text-sub);">Dark sky essential</div>
+          </div>
+          <div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);">
+            <div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🌙 Max Moon</div>
+            <div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:#f6ad55;">30%</div>
+            <div style="font-size:0.75rem;color:var(--text-sub);">New moon preferred</div>
+          </div>
+          <div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);">
+            <div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">📅 Season (N hemi)</div>
+            <div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:#68d391;">Mar–Oct</div>
+            <div style="font-size:0.75rem;color:var(--text-sub);">Core: Jun–Aug peak</div>
+          </div>
+        </div>
+        <div style="font-size:0.82rem;color:var(--text-sub);background:rgba(183,148,244,0.07);border-radius:6px;padding:10px 14px;line-height:1.6;">
+          📸 <strong style="color:var(--text-main);">Composition tip:</strong> Always include an interesting foreground (trees, mountains, buildings) — this is what separates great Milky Way shots from ordinary ones. Use manual focus locked on a bright star, then reframe.
+        </div>
+      </div>
+
+      <!-- Storage calculator -->
+      <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px;">
+        <div style="color:var(--accent);font-size:0.9rem;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;">🧮 Session Calculator</div>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:14px;">
+          <div>
+            <div style="font-size:0.72rem;color:var(--text-sub);margin-bottom:5px;text-transform:uppercase;">Exposure (s)</div>
+            <input type="number" id="mw_exp" value="20" min="5" max="60"
+              style="width:80px;background:#000;border:1px solid var(--border);color:var(--accent);padding:7px 10px;border-radius:6px;font-family:monospace;font-size:1rem;outline:none;"
+              oninput="calcMW()">
+          </div>
+          <div>
+            <div style="font-size:0.72rem;color:var(--text-sub);margin-bottom:5px;text-transform:uppercase;">Frames</div>
+            <input type="number" id="mw_frames" value="30" min="10" max="500"
+              style="width:80px;background:#000;border:1px solid var(--border);color:var(--accent);padding:7px 10px;border-radius:6px;font-family:monospace;font-size:1rem;outline:none;"
+              oninput="calcMW()">
+          </div>
+        </div>
+        <div id="mw_calc_result" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;">
+          <div style="background:var(--bg-row);border-radius:8px;padding:10px;border:1px solid var(--border);">
+            <div style="font-size:0.68rem;color:var(--text-sub);margin-bottom:3px;">SESSION TIME</div>
+            <div id="mw_r_session" style="font-family:monospace;font-size:1rem;font-weight:700;color:#68d391;">—</div>
+          </div>
+          <div style="background:var(--bg-row);border-radius:8px;padding:10px;border:1px solid var(--border);">
+            <div style="font-size:0.68rem;color:var(--text-sub);margin-bottom:3px;">STORAGE (~30MB/frame)</div>
+            <div id="mw_r_storage" style="font-family:monospace;font-size:1rem;font-weight:700;color:var(--accent);">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pre-session checklist -->
+      <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px;">
+        <div style="color:var(--accent);font-size:0.9rem;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;">✅ Pre-Session Checklist</div>
+        <div id="mw_checklist" style="display:flex;flex-direction:column;gap:8px;">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);">
+            <input type="checkbox" id="mw_chk1" onchange="saveMWChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span style="font-size:0.88rem;color:var(--text-main);">🔋 Battery fully charged (or external power bank connected)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);">
+            <input type="checkbox" id="mw_chk2" onchange="saveMWChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span style="font-size:0.88rem;color:var(--text-main);">💾 SD card with sufficient free space (≥16 GB)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);">
+            <input type="checkbox" id="mw_chk3" onchange="saveMWChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span style="font-size:0.88rem;color:var(--text-main);">📐 Tripod stable and level (low center of gravity)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);">
+            <input type="checkbox" id="mw_chk4" onchange="saveMWChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span style="font-size:0.88rem;color:var(--text-main);">🔭 Manual focus locked on a bright star (Vega, Altair, Antares)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);">
+            <input type="checkbox" id="mw_chk5" onchange="saveMWChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span style="font-size:0.88rem;color:var(--text-main);">🌑 Confirmed moon phase ≤ 30% illumination</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);">
+            <input type="checkbox" id="mw_chk6" onchange="saveMWChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span style="font-size:0.88rem;color:var(--text-main);">🌍 Interesting foreground element framed and in focus</span>
+          </label>
+        </div>
+        <button onclick="resetMWChecklist()" style="margin-top:12px;background:transparent;border:1px solid var(--border);color:var(--text-sub);padding:6px 14px;border-radius:6px;font-size:0.78rem;cursor:pointer;">🗑️ Reset checklist</button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════
+         STAR TRAILS MODE PANEL
+    ════════════════════════════════════════════════════ -->
+    <div id="panel_star_trails" style="display:none;">
+      <div id="st_alerts" style="margin-bottom:16px;"></div>
+
+      <div style="background:linear-gradient(135deg,rgba(183,148,244,0.08),rgba(183,148,244,0.15));border:2px solid var(--accent);border-radius:12px;padding:20px;margin-bottom:16px;">
+        <div style="color:var(--accent);font-size:1rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;">🌠 Star Trails — Ideal Conditions</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px;">
+          <div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);">
+            <div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">⏱️ Exposure</div>
+            <div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:var(--accent);">20–30 s</div>
+            <div style="font-size:0.75rem;color:var(--text-sub);">Per frame</div>
+          </div>
+          <div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);">
+            <div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">📶 Gain</div>
+            <div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:var(--accent);">50–60</div>
+            <div style="font-size:0.75rem;color:var(--text-sub);">Lower to avoid saturation</div>
+          </div>
+          <div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);">
+            <div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">⭕ Filter</div>
+            <div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:#68d391;">None</div>
+            <div style="font-size:0.75rem;color:var(--text-sub);">Natural star colors</div>
+          </div>
+          <div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);">
+            <div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🌙 Max Moon</div>
+            <div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:#fc8181;">10%</div>
+            <div style="font-size:0.75rem;color:var(--text-sub);">Bright moon ruins trails</div>
+          </div>
+          <div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);">
+            <div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🧭 North panning</div>
+            <div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:var(--accent);">Circular</div>
+            <div style="font-size:0.75rem;color:var(--text-sub);">Polaris at center</div>
+          </div>
+          <div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);">
+            <div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🧭 South/East/West</div>
+            <div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:var(--accent);">Dramatic arcs</div>
+            <div style="font-size:0.75rem;color:var(--text-sub);">Great for landscapes</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trail length calculator -->
+      <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px;">
+        <div style="color:var(--accent);font-size:0.9rem;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;">🧮 Trail Length Calculator</div>
+        <div style="font-size:0.82rem;color:var(--text-sub);margin-bottom:14px;">How long do you want each trail to appear in the final stacked image?</div>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:16px;">
+          <div>
+            <div style="font-size:0.72rem;color:var(--text-sub);margin-bottom:5px;text-transform:uppercase;">Trail Length (minutes)</div>
+            <input type="number" id="st_trail_min" value="60" min="10" max="480"
+              style="width:90px;background:#000;border:1px solid var(--border);color:var(--accent);padding:7px 10px;border-radius:6px;font-family:monospace;font-size:1rem;outline:none;"
+              oninput="calcST()">
+          </div>
+          <div>
+            <div style="font-size:0.72rem;color:var(--text-sub);margin-bottom:5px;text-transform:uppercase;">Exposure per frame (s)</div>
+            <input type="number" id="st_exp" value="25" min="10" max="60"
+              style="width:90px;background:#000;border:1px solid var(--border);color:var(--accent);padding:7px 10px;border-radius:6px;font-family:monospace;font-size:1rem;outline:none;"
+              oninput="calcST()">
+          </div>
+          <div>
+            <div style="font-size:0.72rem;color:var(--text-sub);margin-bottom:5px;text-transform:uppercase;">Interval gap (s)</div>
+            <input type="number" id="st_gap" value="1" min="0" max="5"
+              style="width:70px;background:#000;border:1px solid var(--border);color:var(--accent);padding:7px 10px;border-radius:6px;font-family:monospace;font-size:1rem;outline:none;"
+              oninput="calcST()">
+          </div>
+        </div>
+        <div id="st_calc_result" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;">
+          <div style="background:var(--bg-row);border-radius:8px;padding:10px;border:1px solid var(--border);">
+            <div style="font-size:0.68rem;color:var(--text-sub);margin-bottom:3px;">TOTAL FRAMES</div>
+            <div id="st_r_frames" style="font-family:monospace;font-size:1.1rem;font-weight:700;color:#68d391;">—</div>
+          </div>
+          <div style="background:var(--bg-row);border-radius:8px;padding:10px;border:1px solid var(--border);">
+            <div style="font-size:0.68rem;color:var(--text-sub);margin-bottom:3px;">ACTUAL SESSION</div>
+            <div id="st_r_session" style="font-family:monospace;font-size:1.1rem;font-weight:700;color:var(--accent);">—</div>
+          </div>
+          <div style="background:var(--bg-row);border-radius:8px;padding:10px;border:1px solid var(--border);">
+            <div style="font-size:0.68rem;color:var(--text-sub);margin-bottom:3px;">STORAGE (~25MB/frame)</div>
+            <div id="st_r_storage" style="font-family:monospace;font-size:1.1rem;font-weight:700;color:var(--accent);">—</div>
+          </div>
+          <div style="background:var(--bg-row);border-radius:8px;padding:10px;border:1px solid var(--border);">
+            <div style="font-size:0.68rem;color:var(--text-sub);margin-bottom:3px;">BATTERY (est.)</div>
+            <div id="st_r_battery" style="font-family:monospace;font-size:1.1rem;font-weight:700;color:#f6ad55;">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pre-session checklist -->
+      <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px;">
+        <div style="color:var(--accent);font-size:0.9rem;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;">✅ Pre-Session Checklist</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);">
+            <input type="checkbox" id="st_chk1" onchange="saveSTChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span style="font-size:0.88rem;color:var(--text-main);">🔋 External battery pack connected (MANDATORY for sessions &gt; 1h)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);">
+            <input type="checkbox" id="st_chk2" onchange="saveSTChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span style="font-size:0.88rem;color:var(--text-main);">💾 Large SD card (≥ 32 GB) inserted and formatted</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);">
+            <input type="checkbox" id="st_chk3" onchange="saveSTChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span style="font-size:0.88rem;color:var(--text-main);">📐 Tripod low and stable — minimize vibration from wind</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);">
+            <input type="checkbox" id="st_chk4" onchange="saveSTChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span style="font-size:0.88rem;color:var(--text-main);">🧭 Target direction chosen: North (circles) or East/West (arcs)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);">
+            <input type="checkbox" id="st_chk5" onchange="saveSTChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span style="font-size:0.88rem;color:var(--text-main);">⏱️ Interval set to 0–1 s gap between frames (no dark gaps in trails)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);">
+            <input type="checkbox" id="st_chk6" onchange="saveSTChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span style="font-size:0.88rem;color:var(--text-main);">🔭 Manual focus set and locked on a bright star</span>
+          </label>
+        </div>
+        <button onclick="resetSTChecklist()" style="margin-top:12px;background:transparent;border:1px solid var(--border);color:var(--text-sub);padding:6px 14px;border-radius:6px;font-size:0.78rem;cursor:pointer;">🗑️ Reset checklist</button>
+      </div>
+
+      <div style="background:rgba(183,148,244,0.07);border:1px dashed var(--accent);border-radius:8px;padding:12px 16px;font-size:0.82rem;color:var(--text-sub);line-height:1.6;margin-bottom:16px;">
+        💡 <strong style="color:var(--accent);">Post-processing:</strong> Use <strong>StarStaX</strong> (free, Win/Mac/Linux) with "Gap Filling" mode enabled to blend all frames into a single stunning star trail image.
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════
+         TIME-LAPSE MODE PANEL
+    ════════════════════════════════════════════════════ -->
+    <div id="panel_time_lapse" style="display:none;">
+      <div id="tl_alerts" style="margin-bottom:16px;"></div>
+
+      <div style="background:linear-gradient(135deg,rgba(183,148,244,0.08),rgba(183,148,244,0.15));border:2px solid var(--accent);border-radius:12px;padding:20px;margin-bottom:16px;">
+        <div style="color:var(--accent);font-size:1rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;">🎞️ Time-Lapse — Ideal Setup</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px;">
+          <div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);">
+            <div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">⏱️ Exposure</div>
+            <div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:var(--accent);">2–5 s</div>
+            <div style="font-size:0.75rem;color:var(--text-sub);">Per frame (sky movement)</div>
+          </div>
+          <div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);">
+            <div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">📶 Gain</div>
+            <div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:var(--accent);">40–50</div>
+            <div style="font-size:0.75rem;color:var(--text-sub);">Avoid noise build-up</div>
+          </div>
+          <div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);">
+            <div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">⭕ Filter</div>
+            <div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:#68d391;">None</div>
+            <div style="font-size:0.75rem;color:var(--text-sub);">Natural colors for video</div>
+          </div>
+          <div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);border-color:#fc8181;">
+            <div style="font-size:0.7rem;color:#fc8181;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🔒 White Balance</div>
+            <div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:#fc8181;">MANUAL LOCK</div>
+            <div style="font-size:0.75rem;color:#fc8181;">Never auto — causes flicker!</div>
+          </div>
+          <div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);border-color:#fc8181;">
+            <div style="font-size:0.7rem;color:#fc8181;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">📷 Exposure Mode</div>
+            <div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:#fc8181;">MANUAL LOCK</div>
+            <div style="font-size:0.75rem;color:#fc8181;">Fixed exp, gain, focus</div>
+          </div>
+          <div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);">
+            <div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🎬 Output fps</div>
+            <div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:var(--accent);">24–30 fps</div>
+            <div style="font-size:0.75rem;color:var(--text-sub);">Assemble in post</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="background:rgba(252,129,129,0.1);border:1px solid rgba(252,129,129,0.4);border-radius:6px;padding:10px 14px;font-size:0.82rem;color:#fc8181;font-weight:600;">
+            ⚠️ Deflicker correction is <strong>MANDATORY</strong> in post-processing (use LRTimelapse or similar)
+          </div>
+          <div style="background:rgba(246,173,85,0.1);border:1px solid rgba(246,173,85,0.3);border-radius:6px;padding:10px 14px;font-size:0.82rem;color:#f6ad55;">
+            💾 SD card ≥ 32 GB recommended — high frame counts fill up fast
+          </div>
+        </div>
+      </div>
+
+      <!-- Frame rate calculator -->
+      <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px;">
+        <div style="color:var(--accent);font-size:0.9rem;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;">🧮 Frame Rate Calculator</div>
+        <div style="font-size:0.82rem;color:var(--text-sub);margin-bottom:14px;">How long do you want the final video to be?</div>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:16px;">
+          <div>
+            <div style="font-size:0.72rem;color:var(--text-sub);margin-bottom:5px;text-transform:uppercase;">Video duration (seconds)</div>
+            <input type="number" id="tl_video_dur" value="30" min="5" max="300"
+              style="width:90px;background:#000;border:1px solid var(--border);color:var(--accent);padding:7px 10px;border-radius:6px;font-family:monospace;font-size:1rem;outline:none;"
+              oninput="calcTL()">
+          </div>
+          <div>
+            <div style="font-size:0.72rem;color:var(--text-sub);margin-bottom:5px;text-transform:uppercase;">Output fps</div>
+            <select id="tl_fps" onchange="calcTL()"
+              style="background:#000;border:1px solid var(--border);color:var(--accent);padding:7px 10px;border-radius:6px;font-family:monospace;font-size:1rem;outline:none;">
+              <option value="24">24 fps</option>
+              <option value="25">25 fps</option>
+              <option value="30" selected>30 fps</option>
+              <option value="60">60 fps</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:0.72rem;color:var(--text-sub);margin-bottom:5px;text-transform:uppercase;">Exposure per frame (s)</div>
+            <input type="number" id="tl_exp" value="3" min="1" max="30"
+              style="width:80px;background:#000;border:1px solid var(--border);color:var(--accent);padding:7px 10px;border-radius:6px;font-family:monospace;font-size:1rem;outline:none;"
+              oninput="calcTL()">
+          </div>
+        </div>
+        <div id="tl_calc_result" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;">
+          <div style="background:var(--bg-row);border-radius:8px;padding:10px;border:1px solid var(--border);">
+            <div style="font-size:0.68rem;color:var(--text-sub);margin-bottom:3px;">FRAMES NEEDED</div>
+            <div id="tl_r_frames" style="font-family:monospace;font-size:1.1rem;font-weight:700;color:#68d391;">—</div>
+          </div>
+          <div style="background:var(--bg-row);border-radius:8px;padding:10px;border:1px solid var(--border);">
+            <div style="font-size:0.68rem;color:var(--text-sub);margin-bottom:3px;">CAPTURE TIME</div>
+            <div id="tl_r_capture" style="font-family:monospace;font-size:1.1rem;font-weight:700;color:var(--accent);">—</div>
+          </div>
+          <div style="background:var(--bg-row);border-radius:8px;padding:10px;border:1px solid var(--border);">
+            <div style="font-size:0.68rem;color:var(--text-sub);margin-bottom:3px;">STORAGE (~8MB/frame)</div>
+            <div id="tl_r_storage" style="font-family:monospace;font-size:1.1rem;font-weight:700;color:var(--accent);">—</div>
+          </div>
+          <div style="background:var(--bg-row);border-radius:8px;padding:10px;border:1px solid var(--border);">
+            <div style="font-size:0.68rem;color:var(--text-sub);margin-bottom:3px;">SPEED-UP RATIO</div>
+            <div id="tl_r_ratio" style="font-family:monospace;font-size:1.1rem;font-weight:700;color:#f6ad55;">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pre-session checklist -->
+      <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px;">
+        <div style="color:var(--accent);font-size:0.9rem;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;">✅ Pre-Session Checklist</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);">
+            <input type="checkbox" id="tl_chk1" onchange="saveTLChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span style="font-size:0.88rem;color:var(--text-main);">⏱️ Intervalometer/interval mode set and tested</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);">
+            <input type="checkbox" id="tl_chk2" onchange="saveTLChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span style="font-size:0.88rem;color:var(--text-main);">🔒 White Balance set to MANUAL and locked (never Auto!)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);">
+            <input type="checkbox" id="tl_chk3" onchange="saveTLChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span style="font-size:0.88rem;color:var(--text-main);">📷 Exposure and ISO/gain locked in manual mode</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);">
+            <input type="checkbox" id="tl_chk4" onchange="saveTLChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span style="font-size:0.88rem;color:var(--text-main);">🔭 Focus locked manually (disable auto-focus)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);">
+            <input type="checkbox" id="tl_chk5" onchange="saveTLChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span style="font-size:0.88rem;color:var(--text-main);">🔋 Power bank / external power connected</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);">
+            <input type="checkbox" id="tl_chk6" onchange="saveTLChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span style="font-size:0.88rem;color:var(--text-main);">💾 SD card ≥ 32 GB, free space verified</span>
+          </label>
+        </div>
+        <button onclick="resetTLChecklist()" style="margin-top:12px;background:transparent;border:1px solid var(--border);color:var(--text-sub);padding:6px 14px;border-radius:6px;font-size:0.78rem;cursor:pointer;">🗑️ Reset checklist</button>
+      </div>
+    </div>
+
     <div class="tech-sheet" id="sheet">
       <div id="corrBanner" style="display:none;margin:12px 16px 0;padding:12px 16px;border-radius:8px;border:1px solid;font-size:0.8rem;line-height:1.5;"></div>
       <div class="sheet-header" style="display:flex;align-items:center;gap:16px;">
@@ -806,8 +1310,18 @@
              style="width:90px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--border);display:none;flex-shrink:0;"
              onerror="this.style.display='none'">
         <div style="flex:1;">
-          <h2 id="objId">M1</h2>
-          <div class="type"><span id="objName">Crab Nebula</span> · <span id="objType">Resto di Supernova</span></div>
+          <h2 id="objId" style="display:flex;align-items:center;gap:10px;">
+            M1 <span id="typeIcon" style="font-size:1.2rem;opacity:0.8;"></span>
+          </h2>
+          <div class="type">
+            <span id="objName">Crab Nebula</span> · <span id="objType">Resto di Supernova</span>
+          </div>
+          <div style="margin-top:8px;">
+            <a id="astrobinLink" href="#" target="_blank" 
+               style="display:inline-flex;align-items:center;gap:6px;background:rgba(183,148,244,0.1);color:var(--accent);padding:4px 10px;border-radius:4px;font-size:0.75rem;text-decoration:none;font-weight:700;border:1px solid var(--accent);">
+              🖼️ View on Astrobin
+            </a>
+          </div>
         </div>
         <span class="badge medium" id="objDiff">INTERMEDIATE</span>
       </div>
@@ -1090,6 +1604,276 @@
   </div>
 
   <script>
+    const OBS_MODES = {
+      deep_sky: {
+        name: "Deep Sky",
+        icon: "🌌",
+        defaults: { exp: 15, gain: 80, filter: "Astro", frames: 300 },
+        constraints: { maxBortle: 9, maxMoon: 100, minAlt: 30 },
+        tips: ["Use Dual-band filter for emission nebulae", "Ensure perfect polar alignment", "Focus on a bright star first"],
+        post: ["Stack with DeepSkyStacker or Siril", "Use GraXpert for gradient removal"],
+        difficulty: "🟡",
+        estTime: "45-120 min"
+      },
+      milky_way: {
+        name: "Milky Way",
+        icon: "🌌✨",
+        defaults: { exp: 10, gain: 80, filter: "None", frames: 30 },
+        constraints: { maxBortle: 4, maxMoon: 30, minAlt: 30 },
+        tips: ["Target the Galactic Core (Sagittarius)", "Use a wide-angle lens if possible", "Shoot during New Moon phase"],
+        post: ["Stack to reduce noise", "Enhance contrast in Lightroom/Camera Raw"],
+        difficulty: "🟢",
+        estTime: "10-20 min"
+      },
+      star_trails: {
+        name: "Star Trails",
+        icon: "💫",
+        defaults: { exp: 30, gain: 60, filter: "None", frames: 120 },
+        constraints: { maxBortle: 7, maxMoon: 50, minAlt: 20 },
+        tips: ["Point North for circular trails", "Disable noise reduction between frames", "Use a stable tripod"],
+        post: ["Use StarStaX (free) for blending frames", "Enable 'Gap Filling' mode"],
+        difficulty: "🟢",
+        estTime: "60-240 min"
+      },
+      time_lapse: {
+        name: "Time-Lapse",
+        icon: "⏱️",
+        defaults: { exp: 1, gain: 40, filter: "None", frames: 600 },
+        constraints: { maxBortle: 9, maxMoon: 100, minAlt: 10 },
+        tips: ["Check battery for long sessions", "Lock exposure to avoid flickering", "Set interval slightly longer than exposure"],
+        post: ["Assemble frames at 24 or 30 fps", "Add motion blur in post if needed"],
+        difficulty: "🟡",
+        estTime: "30-180 min"
+      }
+    };
+
+    function switchObsMode(mode) {
+      localStorage.setItem('dwarf_obs_mode', mode);
+
+      // Elements belonging to Deep Sky mode only
+      const searchBox = document.querySelector('.search-box');
+      const tags = document.querySelector('.tags');
+      const sheet = document.getElementById('sheet');
+      const exportSection = document.getElementById('exportSection');
+      const tipsSection = document.getElementById('tipsSection');
+      const tonightPanel = document.getElementById('tonightPanel');
+
+      // The three new mode panels
+      const panelMW = document.getElementById('panel_milky_way');
+      const panelST = document.getElementById('panel_star_trails');
+      const panelTL = document.getElementById('panel_time_lapse');
+
+      if (mode === 'deep_sky') {
+        // Show Deep Sky UI
+        if (searchBox) searchBox.style.display = 'flex';
+        if (tags) tags.style.display = 'flex';
+        if (sheet) sheet.style.display = '';       // restore — show() will make it visible
+        if (tonightPanel) tonightPanel.style.display = '';
+        // Hide new panels
+        if (panelMW) panelMW.style.display = 'none';
+        if (panelST) panelST.style.display = 'none';
+        if (panelTL) panelTL.style.display = 'none';
+      } else {
+        // Hide Deep Sky search UI and sheet
+        if (searchBox) searchBox.style.display = 'none';
+        if (tags) tags.style.display = 'none';
+        if (sheet) sheet.style.display = 'none';
+        if (exportSection) exportSection.style.display = 'none';
+        if (tipsSection) tipsSection.style.display = 'none';
+        if (tonightPanel) tonightPanel.style.display = 'none';
+
+        // Show the correct panel
+        if (panelMW) panelMW.style.display = mode === 'milky_way' ? '' : 'none';
+        if (panelST) panelST.style.display = mode === 'star_trails' ? '' : 'none';
+        if (panelTL) panelTL.style.display = mode === 'time_lapse' ? '' : 'none';
+
+        // Run the relevant calculator immediately
+        if (mode === 'milky_way') { calcMW(); restoreMWChecklist(); updateMWAlerts(); }
+        if (mode === 'star_trails') { calcST(); restoreSTChecklist(); updateSTAlerts(); }
+        if (mode === 'time_lapse') { calcTL(); restoreTLChecklist(); updateTLAlerts(); }
+      }
+
+      updateModeBanner(mode);
+      // Re-evaluate smart sky-quality banner for the newly selected mode
+      if (window._skyQuality) updateSkyQualityBanner();
+    }
+
+    // ── MILKY WAY CALCULATOR ─────────────────────────────────────────────────
+    function calcMW() {
+      const exp = parseInt(document.getElementById('mw_exp').value) || 20;
+      const frames = parseInt(document.getElementById('mw_frames').value) || 30;
+      const totalSec = exp * frames;
+      const storageGB = (frames * 30 / 1024).toFixed(2);
+      document.getElementById('mw_r_session').textContent = formatDur(totalSec);
+      document.getElementById('mw_r_storage').textContent = storageGB + ' GB';
+    }
+
+    // ── STAR TRAILS CALCULATOR ───────────────────────────────────────────────
+    function calcST() {
+      const trailMin = parseInt(document.getElementById('st_trail_min').value) || 60;
+      const exp = parseInt(document.getElementById('st_exp').value) || 25;
+      const gap = parseInt(document.getElementById('st_gap').value) || 1;
+      const cycleTime = exp + gap;
+      const totalSec = trailMin * 60;
+      const frames = Math.ceil(totalSec / cycleTime);
+      const actualSec = frames * cycleTime;
+      const storageGB = (frames * 25 / 1024).toFixed(2);
+      // Rough battery: ~4% per 10 min at moderate load
+      const battPct = Math.round((actualSec / 60) / 10 * 4);
+      document.getElementById('st_r_frames').textContent = frames + ' frames';
+      document.getElementById('st_r_session').textContent = formatDur(actualSec);
+      document.getElementById('st_r_storage').textContent = storageGB + ' GB';
+      document.getElementById('st_r_battery').textContent = battPct + '% est.';
+      // Show external battery warning if session > 60 min
+      updateSTAlerts();
+    }
+
+    // ── TIME-LAPSE CALCULATOR ────────────────────────────────────────────────
+    function calcTL() {
+      const vidDur = parseInt(document.getElementById('tl_video_dur').value) || 30;
+      const fps = parseInt(document.getElementById('tl_fps').value) || 30;
+      const exp = parseInt(document.getElementById('tl_exp').value) || 3;
+      const frames = vidDur * fps;
+      const captureSec = frames * exp;
+      const storageGB = (frames * 8 / 1024).toFixed(2);
+      const ratio = Math.round(captureSec / vidDur) + '× speed';
+      document.getElementById('tl_r_frames').textContent = frames + ' frames';
+      document.getElementById('tl_r_capture').textContent = formatDur(captureSec);
+      document.getElementById('tl_r_storage').textContent = storageGB + ' GB';
+      document.getElementById('tl_r_ratio').textContent = ratio;
+      updateTLAlerts();
+    }
+
+    // ── HELPER ───────────────────────────────────────────────────────────────
+    function formatDur(sec) {
+      if (sec < 60) return sec + 's';
+      if (sec < 3600) return Math.round(sec / 60) + ' min';
+      return (sec / 3600).toFixed(1) + 'h';
+    }
+
+    // ── REAL-TIME ALERTS ─────────────────────────────────────────────────────
+    function _alertBanner(alerts) {
+      if (!alerts.length) return '';
+      return alerts.map(a => `<div style="background:${a.bg};border:1px solid ${a.col};border-radius:8px;padding:10px 14px;font-size:0.83rem;color:${a.col};font-weight:600;margin-bottom:8px;">${a.icon} ${a.msg}</div>`).join('');
+    }
+
+    function updateMWAlerts() {
+      const el = document.getElementById('mw_alerts');
+      if (!el) return;
+      const bortle = parseInt(document.getElementById('bortleSelect').value) || 5;
+      const moon = window._lastLuna || 0;
+      const month = new Date().getMonth() + 1; // 1-12
+      const alerts = [];
+      if (bortle > 4) alerts.push({bg:'rgba(252,129,129,0.12)',col:'#fc8181',icon:'🚨',msg:`Bortle ${bortle} — Milky Way core will be washed out. Ideal: ≤ 4. Move to a darker location.`});
+      if (moon > 30) alerts.push({bg:'rgba(252,129,129,0.12)',col:'#fc8181',icon:'🌙',msg:`Moon at ${moon}% — too bright for Milky Way. Wait for phase < 30%.`});
+      if (month < 3 || month > 10) alerts.push({bg:'rgba(252,129,129,0.12)',col:'#fc8181',icon:'📅',msg:`Galactic core NOT visible in this season (northern hemisphere). Best: March–October.`});
+      if (window._lastWind && window._lastWind > 30) alerts.push({bg:'rgba(246,173,85,0.13)',col:'#f6ad55',icon:'💨',msg:`Wind ${window._lastWind} km/h — stabilize your tripod, use low center of gravity.`});
+      el.innerHTML = _alertBanner(alerts);
+    }
+
+    function updateSTAlerts() {
+      const el = document.getElementById('st_alerts');
+      if (!el) return;
+      const moon = window._lastLuna || 0;
+      const alerts = [];
+      if (moon > 10) alerts.push({bg:'rgba(252,129,129,0.12)',col:'#fc8181',icon:'🌙',msg:`Moon at ${moon}% — too bright for star trails! Need < 10%. Moon glow will overpower fainter stars.`});
+      // Check if session > 1h from calculator
+      const trailMin = parseInt((document.getElementById('st_trail_min')||{}).value) || 0;
+      if (trailMin > 60) alerts.push({bg:'rgba(246,173,85,0.13)',col:'#f6ad55',icon:'🔋',msg:`Session > 1h — external battery MANDATORY. DWARF internal battery won't last!`});
+      if (window._lastWind && window._lastWind > 30) alerts.push({bg:'rgba(246,173,85,0.13)',col:'#f6ad55',icon:'💨',msg:`Wind ${window._lastWind} km/h — vibrations probable. Use low tripod, add weight to center column.`});
+      el.innerHTML = _alertBanner(alerts);
+    }
+
+    function updateTLAlerts() {
+      const el = document.getElementById('tl_alerts');
+      if (!el) return;
+      const alerts = [];
+      const captureSec = parseInt((document.getElementById('tl_r_capture')||{}).textContent) || 0;
+      const frames = parseInt((document.getElementById('tl_r_frames')||{}).textContent) || 0;
+      if (frames > 500) alerts.push({bg:'rgba(246,173,85,0.13)',col:'#f6ad55',icon:'💾',msg:`${frames} frames — SD card ≥ 32 GB strongly recommended.`});
+      alerts.push({bg:'rgba(252,129,129,0.12)',col:'#fc8181',icon:'⚠️',msg:'Deflicker correction MANDATORY in post. Use LRTimelapse or Lightroom keyframing.'});
+      el.innerHTML = _alertBanner(alerts);
+    }
+
+    // ── CHECKLISTS (persist with localStorage) ───────────────────────────────
+    function saveMWChecklist() {
+      const s = [1,2,3,4,5,6].map(i => document.getElementById('mw_chk'+i)?.checked ? '1' : '0').join('');
+      try { localStorage.setItem('dwarf_mw_checklist', s); } catch(e) {}
+    }
+    function restoreMWChecklist() {
+      try {
+        const s = localStorage.getItem('dwarf_mw_checklist') || '';
+        [1,2,3,4,5,6].forEach((i,idx) => { const el = document.getElementById('mw_chk'+i); if(el) el.checked = s[idx]==='1'; });
+      } catch(e) {}
+    }
+    function resetMWChecklist() {
+      [1,2,3,4,5,6].forEach(i => { const el = document.getElementById('mw_chk'+i); if(el) el.checked = false; });
+      try { localStorage.removeItem('dwarf_mw_checklist'); } catch(e) {}
+    }
+
+    function saveSTChecklist() {
+      const s = [1,2,3,4,5,6].map(i => document.getElementById('st_chk'+i)?.checked ? '1' : '0').join('');
+      try { localStorage.setItem('dwarf_st_checklist', s); } catch(e) {}
+    }
+    function restoreSTChecklist() {
+      try {
+        const s = localStorage.getItem('dwarf_st_checklist') || '';
+        [1,2,3,4,5,6].forEach((i,idx) => { const el = document.getElementById('st_chk'+i); if(el) el.checked = s[idx]==='1'; });
+      } catch(e) {}
+    }
+    function resetSTChecklist() {
+      [1,2,3,4,5,6].forEach(i => { const el = document.getElementById('st_chk'+i); if(el) el.checked = false; });
+      try { localStorage.removeItem('dwarf_st_checklist'); } catch(e) {}
+    }
+
+    function saveTLChecklist() {
+      const s = [1,2,3,4,5,6].map(i => document.getElementById('tl_chk'+i)?.checked ? '1' : '0').join('');
+      try { localStorage.setItem('dwarf_tl_checklist', s); } catch(e) {}
+    }
+    function restoreTLChecklist() {
+      try {
+        const s = localStorage.getItem('dwarf_tl_checklist') || '';
+        [1,2,3,4,5,6].forEach((i,idx) => { const el = document.getElementById('tl_chk'+i); if(el) el.checked = s[idx]==='1'; });
+      } catch(e) {}
+    }
+    function resetTLChecklist() {
+      [1,2,3,4,5,6].forEach(i => { const el = document.getElementById('tl_chk'+i); if(el) el.checked = false; });
+      try { localStorage.removeItem('dwarf_tl_checklist'); } catch(e) {}
+    }
+
+    function updateModeBanner(mode) {
+      const data = OBS_MODES[mode];
+      let banner = document.getElementById('modeBanner');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'modeBanner';
+        const container = document.querySelector('.container');
+        const sheet = document.getElementById('sheet');
+        container.insertBefore(banner, sheet);
+      }
+      
+      const bortle = parseInt(document.getElementById('bortleSelect').value) || 5;
+      const moon = window._lastLuna || 0;
+      
+      let warnings = [];
+      if (bortle > data.constraints.maxBortle) warnings.push(`⚠️ Bortle ${bortle} is too high (Max ${data.constraints.maxBortle})`);
+      if (moon > data.constraints.maxMoon) warnings.push(`⚠️ Moon ${moon}% is too bright (Max ${data.constraints.maxMoon}%)`);
+      
+      banner.className = 'advanced-tech';
+      banner.style.display = 'block';
+      banner.style.marginTop = '20px';
+      banner.innerHTML = `
+        <div class="tech-header">
+          <span>${data.icon} Mode: ${data.name}</span>
+          <span class="badge ${mode==='deep_sky'?'intermediate':'easy'}" style="margin-left:auto">${data.difficulty}</span>
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 10px;">
+          ${data.tips.map(t => `• ${t}`).join('<br>')}
+        </div>
+        ${warnings.length > 0 ? `<div style="color: var(--danger); font-weight: 700; font-size: 0.8rem; margin-top: 10px;">${warnings.join('<br>')}</div>` : `<div style="color: var(--success); font-weight: 700; font-size: 0.8rem; margin-top: 10px;">✅ Ideal conditions detected</div>`}
+      `;
+    }
+
     // ── LOCATION ──
     let userLat = 43.4;
     let userLon = 13.55;
@@ -1153,6 +1937,21 @@
       ) * 180 / Math.PI;
     }
 
+    function azDeg(ra_h, dec, lstD, lat) {
+      const ha = ((lstD - ra_h * 15) % 360 + 360) % 360;
+      const haR = ha * Math.PI / 180;
+      const dR = dec * Math.PI / 180;
+      const lR = lat * Math.PI / 180;
+      const azR = Math.atan2(Math.sin(haR), Math.cos(haR) * Math.sin(lR) - Math.tan(dR) * Math.cos(lR));
+      return (azR * 180 / Math.PI + 180) % 360;
+    }
+
+    function getCardinal(az) {
+      const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+      const index = Math.round(az / 45) % 8;
+      return directions[index];
+    }
+
     // getAltCurve: altitude points for every 30 min, night-centered (18:00 → 06:00 next day)
     // h = fractional local hour (18..30, where 24=midnight, 30=06:00 next morning)
     // Handles midnight crossing correctly via UTC date offset
@@ -1175,7 +1974,8 @@
         const jd  = getJD(utcDate);
         const lst = getLocalSiderealTime(jd, userLon);
         const alt = altDeg(ra_h, dec, lst, userLat);
-        pts.push({ h, alt: isNaN(alt) ? -90 : alt });
+        const az = azDeg(ra_h, dec, lst, userLat);
+        pts.push({ h, alt: isNaN(alt) ? -90 : alt, az: isNaN(az) ? 0 : az, card: getCardinal(isNaN(az) ? 0 : az) });
       }
       return pts;
     }
@@ -1272,6 +2072,13 @@
         if(hr !== 24){ // 24 already drawn as 00:00 above
           ctx.fillStyle='#6a7490';ctx.textAlign='center';ctx.font='8px monospace';
           ctx.fillText(String(dispHr).padStart(2,'0')+':00',x,PAD.t+ch+13);
+          
+          // Add Azimuth cardinal below time
+          const pt = pts.find(p => Math.abs(p.h - hr) < 0.1);
+          if (pt) {
+            ctx.fillStyle='rgba(183,148,244,0.6)';
+            ctx.fillText(`[${pt.card}]`, x, PAD.t+ch+23);
+          }
         }
       });
 
@@ -1959,54 +2766,92 @@
     }
 
     function updatePlanner(obj) {
+      const mode = document.getElementById('obsMode').value || 'deep_sky';
+      const data = OBS_MODES[mode];
       const bortle = parseInt(document.getElementById('bortleSelect').value) || 5;
-      // Get adapted exposure & gain (already calculated in show())
-      const adjData = applyCorrections(obj.settings.gain, obj.settings.exp,
-        window._lastLuna||0, obj._effectiveFilter || obj.settings.filter, bortle, obj.type, obj.advice);
+      
+      let expSec, gain, filter, sessionMin, frameCount, summary, expNote = 'base value';
 
-      const expSec  = adjData.exp;
-      const optMin  = calcOptimalMinutes(obj, expSec);
-
-      let sessionMin, frameCount, durNote, framesNote;
-
-      if(plannerMode === 'auto'){
-        sessionMin  = optMin;
-        frameCount  = Math.round((sessionMin * 60) / expSec);
-        durNote     = 'recommended';
-        framesNote  = 'auto-calculated';
-      } else {
-        sessionMin  = parseInt(document.getElementById('availableMinutes').value) || 30;
-        frameCount  = Math.round((sessionMin * 60) / expSec);
-        durNote     = 'your limit';
-        framesNote  = 'in your time';
+      if (mode === 'deep_sky') {
+        const adjData = applyCorrections(obj.settings.gain, obj.settings.exp, window._lastLuna||0, obj._effectiveFilter || obj.settings.filter, bortle, obj.type, obj.advice);
+        expSec = adjData.exp;
+        gain = adjData.gain;
+        filter = obj._effectiveFilter || obj.settings.filter;
+        expNote = adjData.expBase !== adjData.exp ? 'adapted from ' + adjData.expBase + 's' : 'base value';
+        const optMin = calcOptimalMinutes(obj, expSec);
+        
+        if(plannerMode === 'auto'){
+          sessionMin = optMin;
+        } else {
+          sessionMin = parseInt(document.getElementById('availableMinutes').value) || 30;
+        }
+        frameCount = Math.round((sessionMin * 60) / expSec);
+        const q = qualityLabel(frameCount, Math.round((optMin*60)/expSec));
+        summary = plannerMode === 'auto'
+          ? `Tonight for <strong>${obj.id}</strong>: shoot <strong>${frameCount} frames</strong> × <strong>${expSec}s</strong> = <strong>${sessionMin} min</strong> session. ${q.icon} Expected quality: ${q.label}.`
+          : `In your <strong>${sessionMin} min</strong> window: <strong>${frameCount} frames</strong> × <strong>${expSec}s</strong>. ${q.icon} Quality: ${q.label}. Optimal would be ${optMin} min.`;
+        
+        document.getElementById('qsQuality').innerText = q.icon + ' ' + q.label;
+      } 
+      else if (mode === 'milky_way') {
+        expSec = 10; gain = 80; filter = "None";
+        sessionMin = 15;
+        frameCount = Math.round((sessionMin * 60) / expSec);
+        summary = `<strong>Milky Way:</strong> Shoot <strong>${frameCount} frames</strong> of 10s. Stacking will reveal the Galactic Core. Best with Bortle ≤ 4.`;
+        document.getElementById('qsQuality').innerText = "🟢 Recommended";
+      }
+      else if (mode === 'star_trails') {
+        expSec = 30; gain = 60; filter = "None";
+        sessionMin = parseInt(document.getElementById('availableMinutes').value) || 120;
+        frameCount = Math.round((sessionMin * 60) / expSec);
+        const bat = sessionMin > 180 ? "⚠️ Battery low" : "✅ Battery OK";
+        summary = `<strong>Star Trails:</strong> Total <strong>${sessionMin} min</strong>. Frames: <strong>${frameCount}</strong>. ${bat}. Memory: ~${(frameCount * 15 / 1024).toFixed(1)} GB.`;
+        document.getElementById('qsQuality').innerText = "🟢 Recommended";
+      }
+      else if (mode === 'time_lapse') {
+        expSec = 1; gain = 40; filter = "None";
+        const videoSec = 20; 
+        const fps = 30;
+        frameCount = videoSec * fps;
+        const interval = 5; 
+        sessionMin = Math.round((frameCount * interval) / 60);
+        summary = `<strong>Time-Lapse:</strong> To get <strong>${videoSec}s</strong> of video at ${fps}fps, you need <strong>${frameCount} frames</strong>. Total capture time: <strong>~${sessionMin} min</strong>.`;
+        document.getElementById('qsQuality').innerText = "🟡 Medium";
       }
 
-      const q = qualityLabel(frameCount, Math.round((optMin*60)/expSec));
-
       // Update UI
-      document.getElementById('qsExp').innerText     = expSec + 's';
-      document.getElementById('qsExpNote').innerText = adjData.expBase !== adjData.exp ? 'adapted from ' + adjData.expBase + 's' : 'base value';
-      document.getElementById('qsGain').innerText    = adjData.gain;
-      document.getElementById('qsFilter').innerText  = obj._effectiveFilter || obj.settings.filter;
-      document.getElementById('qsDuration').innerText= sessionMin + ' min';
-      document.getElementById('qsDurNote').innerText = durNote;
-      document.getElementById('qsFrames').innerText  = frameCount;
-      document.getElementById('qsFramesNote').innerText = framesNote;
-      document.getElementById('qsQuality').innerText = q.icon + ' ' + q.label;
-
-      // Summary
-      const modeText = plannerMode === 'auto'
-        ? `Tonight for <strong>${obj.id}</strong>: shoot <strong>${frameCount} frames</strong> × <strong>${expSec}s</strong> = <strong>${sessionMin} min</strong> session. ${q.icon} Expected quality: ${q.label}.`
-        : `In your <strong>${sessionMin} min</strong> window: <strong>${frameCount} frames</strong> × <strong>${expSec}s</strong>. ${q.icon} Quality: ${q.label}. Optimal would be ${optMin} min.`;
-      document.getElementById('qsSummary').innerHTML = modeText;
+      document.getElementById('qsExp').innerText = expSec + 's';
+      document.getElementById('qsExpNote').innerText = expNote;
+      document.getElementById('qsGain').innerText = gain;
+      document.getElementById('qsFilter').innerText = filter;
+      document.getElementById('qsDuration').innerText = sessionMin + ' min';
+      document.getElementById('qsFrames').innerText = frameCount;
+      document.getElementById('qsSummary').innerHTML = summary;
     }
 
-    function show(obj) {
-      window._lastObj = obj;
-      document.getElementById('objId').innerText = obj.id;
-      document.getElementById('objName').innerText = obj.name;
-      document.getElementById('objType').innerText = obj.type;
-      document.getElementById('objType2').innerText = obj.type;
+      function show(obj) {
+        window._lastObj = obj;
+        const typeIcons = {
+          'galaxy': '🌀',
+          'globular': '⚪',
+          'nebula': '☁️',
+          'open': '✨',
+          'cluster': '✨',
+          'planetary': '🪐',
+          'remnant': '💥'
+        };
+        const lowerType = obj.type.toLowerCase();
+        let icon = '🔭';
+        for (const [key, val] of Object.entries(typeIcons)) {
+          if (lowerType.includes(key)) { icon = val; break; }
+        }
+        document.getElementById('typeIcon').innerText = icon;
+        document.getElementById('astrobinLink').href = `https://www.astrobin.com/search/?q=${obj.id}`;
+        
+        document.getElementById('objId').innerHTML = `${obj.id} <span id="typeIcon" style="font-size:1.2rem;opacity:0.8;">${icon}</span>`;
+        document.getElementById('objName').innerText = obj.name;
+        document.getElementById('objType').innerText = obj.type;
+        document.getElementById('objType2').innerText = obj.type;
       document.getElementById('objMag').innerText = obj.mag;
       document.getElementById('objAdvice').innerText = obj.advice;
       const b = document.getElementById('objDiff');
@@ -2230,6 +3075,121 @@
     });
 
     // ── WEATHER (Open-Meteo, 5s timeout) ──
+    // ── SKY QUALITY MODEL (modular — ready for live API payload) ─────────────
+    // Input: raw atmospheric values from Open-Meteo (or future live API)
+    // Output: structured skyQuality object consumed by UI + smart-banner engine
+    function computeSkyQuality({ clouds, humidity, wind }) {
+      // ── Astronomical Seeing Score (1–5) ──────────────────────────────────
+      // Seeing = atmospheric turbulence stability. Lower wind + humidity = better.
+      let seeingScore;
+      if      (clouds > 80 || humidity > 90 || wind > 40) seeingScore = 1;
+      else if (clouds > 60 || humidity > 80 || wind > 30) seeingScore = 2;
+      else if (clouds > 40 || humidity > 70 || wind > 20) seeingScore = 3;
+      else if (clouds > 20 || humidity > 60 || wind > 12) seeingScore = 4;
+      else                                                 seeingScore = 5;
+
+      const seeingLabels = ['', 'Very Poor', 'Poor', 'Fair', 'Good', 'Excellent'];
+      const seeingColors = ['', '#fc8181',   '#fc8181', '#f6ad55', '#68d391', '#68d391'];
+      const seeingNotes  = [
+        '',
+        'Heavy turbulence — stars bloated, trailing likely',
+        'Significant turbulence — stacking efficiency reduced',
+        'Moderate turbulence — acceptable for bright targets',
+        'Stable atmosphere — good for most DSO imaging',
+        'Exceptional stability — ideal for all targets'
+      ];
+
+      // ── Sky Transparency ─────────────────────────────────────────────────
+      // Transparency = how much light passes through atmosphere (humidity + clouds key drivers)
+      let transp, transpNote, transpColor;
+      if      (clouds > 70 || humidity > 85) { transp = 'Low';    transpNote = 'Significant light scatter';   transpColor = '#fc8181'; }
+      else if (clouds > 40 || humidity > 70) { transp = 'Medium'; transpNote = 'Moderate atmospheric haze';   transpColor = '#f6ad55'; }
+      else if (clouds > 15 || humidity > 55) { transp = 'High';   transpNote = 'Good photon throughput';      transpColor = '#68d391'; }
+      else                                   { transp = 'Superb'; transpNote = 'Near-perfect transparency';   transpColor = '#68d391'; }
+
+      // ── Imaging Suitability Pill ─────────────────────────────────────────
+      let suitLabel, suitBg, suitCol, suitBorder;
+      const qualSum = seeingScore + (transp === 'Superb' ? 5 : transp === 'High' ? 4 : transp === 'Medium' ? 2 : 1);
+      if      (qualSum >= 9) { suitLabel = '🟢 Excellent night';   suitBg = 'rgba(104,211,145,0.12)'; suitCol = '#68d391'; suitBorder = '#68d391'; }
+      else if (qualSum >= 6) { suitLabel = '🟡 Good night';        suitBg = 'rgba(246,173,85,0.12)';  suitCol = '#f6ad55'; suitBorder = '#f6ad55'; }
+      else if (qualSum >= 4) { suitLabel = '🟠 Marginal night';    suitBg = 'rgba(252,129,129,0.08)'; suitCol = '#f6ad55'; suitBorder = '#f6ad55'; }
+      else                   { suitLabel = '🔴 Poor night';         suitBg = 'rgba(252,129,129,0.12)'; suitCol = '#fc8181'; suitBorder = '#fc8181'; }
+
+      return {
+        seeingScore,
+        seeingLabel:    seeingLabels[seeingScore],
+        seeingColor:    seeingColors[seeingScore],
+        seeingNote:     seeingNotes[seeingScore],
+        transparency:      transp,
+        transparencyNote:  transpNote,
+        transparencyColor: transpColor,
+        suitLabel, suitBg, suitCol, suitBorder
+      };
+    }
+
+    // ── SMART SKY-QUALITY BANNER ENGINE ─────────────────────────────────────
+    // Evaluates active mode + sky quality → injects contextual alerts/tips
+    function updateSkyQualityBanner() {
+      const banner = document.getElementById('skyQualityBanner');
+      if (!banner) return;
+      const sq = window._skyQuality;
+      const mode = (document.getElementById('obsMode') || {}).value || 'deep_sky';
+      const clouds = window._lastClouds || 0;
+
+      const messages = [];
+
+      // ── Deep Sky / Stacking: poor seeing warning ──────────────────────────
+      if ((mode === 'deep_sky' || mode === 'milky_way') && sq && sq.seeingScore < 3) {
+        messages.push({
+          icon: '⚠️',
+          col:  '#f6ad55',
+          bg:   'rgba(246,173,85,0.1)',
+          bdr:  'rgba(246,173,85,0.35)',
+          title: 'Atmospheric Seeing is Poor',
+          body: `Seeing rated <strong>${sq.seeingScore}/5 — ${sq.seeingLabel}</strong>. Star stacking tracking efficiency might be reduced tonight. Consider shorter exposures (10–15 s) and discard worst frames during stacking.`
+        });
+      }
+
+      // ── Time-Lapse: partial clouds = cloud dynamics opportunity ───────────
+      if (mode === 'time_lapse' && clouds >= 20 && clouds <= 60) {
+        messages.push({
+          icon: '☁️',
+          col:  '#b794f4',
+          bg:   'rgba(183,148,244,0.1)',
+          bdr:  'rgba(183,148,244,0.35)',
+          title: 'Cloud Dynamics Opportunity Detected',
+          body: `Cloud cover at <strong>${clouds}%</strong> — weather conditions are perfect for a cloud dynamics time-lapse! The moving cloud layer will create dramatic motion in your final video.`
+        });
+      }
+
+      // ── Star Trails: moon/seeing advisory (bonus) ─────────────────────────
+      if (mode === 'star_trails' && sq && sq.seeingScore >= 4) {
+        messages.push({
+          icon: '✅',
+          col:  '#68d391',
+          bg:   'rgba(104,211,145,0.08)',
+          bdr:  'rgba(104,211,145,0.3)',
+          title: 'Excellent Seeing for Star Trails',
+          body: `Seeing <strong>${sq.seeingScore}/5</strong> — stars will appear sharp and compact. Trails will have tight, well-defined edges. Great night to shoot!`
+        });
+      }
+
+      if (!messages.length) {
+        banner.style.display = 'none';
+        return;
+      }
+
+      banner.style.display = 'block';
+      banner.innerHTML = messages.map(m => `
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-top:1px solid var(--border);">
+          <span style="font-size:1.2rem;line-height:1.4;">${m.icon}</span>
+          <div style="flex:1;background:${m.bg};border:1px solid ${m.bdr};border-radius:8px;padding:10px 14px;">
+            <div style="font-size:0.8rem;font-weight:700;color:${m.col};margin-bottom:4px;">${m.title}</div>
+            <div style="font-size:0.8rem;color:var(--text-sub);line-height:1.5;">${m.body}</div>
+          </div>
+        </div>`).join('');
+    }
+
     async function loadWeather() {
       const lat = parseFloat(document.getElementById('latInput').value) || userLat;
       const lon = parseFloat(document.getElementById('lonInput').value) || userLon;
@@ -2237,42 +3197,92 @@
       const ctrl = new AbortController();
       const timer = setTimeout(()=>ctrl.abort(), 5000);
       const wRow = document.getElementById('weatherRow');
-      if(wRow){ wRow.style.display='block'; document.getElementById('wSeeing').innerText='⏳ Loading…'; }
+      const sqBanner = document.getElementById('skyQualityBanner');
+      if (wRow) {
+        wRow.style.display = 'block';
+        wRow.style.borderBottomLeftRadius = '0';
+        wRow.style.borderBottomRightRadius = '0';
+        document.getElementById('wSeeing').innerText = '⏳ Loading…';
+        document.getElementById('wAstroSeeingLabel').innerText = '…';
+        document.getElementById('wTransparency').innerText = '…';
+      }
       try {
         const r = await fetch(url, {signal: ctrl.signal});
         clearTimeout(timer);
-        if(!r.ok) throw new Error('HTTP '+r.status);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
         const d = await r.json();
         const c = d.current;
-        const clouds=c.cloud_cover, humidity=c.relative_humidity_2m, temp=c.temperature_2m, wind=c.wind_speed_10m;
+        const clouds = c.cloud_cover, humidity = c.relative_humidity_2m,
+              temp = c.temperature_2m, wind = c.wind_speed_10m;
+
+        // ── Store globals for other subsystems ───────────────────────────────
+        window._lastWind   = wind;
+        window._lastClouds = clouds;
+
+        // ── General seeing (legacy label — kept for backward compat) ─────────
         let seeing, seeingNote;
-        if(clouds>80){seeing='❌ Poor';seeingNote='Too cloudy';}
-        else if(humidity>85){seeing='⚠️ Fair';seeingNote='High humidity';}
-        else if(wind>30){seeing='⚠️ Fair';seeingNote='High wind';}
-        else if(clouds<20&&humidity<60&&wind<15){seeing='✅ Good';seeingNote='Good conditions';}
-        else{seeing='🔶 Moderate';seeingNote='Check later';}
-        const cloudCol=clouds>60?'#fc8181':clouds>30?'#f6ad55':'#68d391';
-        const humCol=humidity>80?'#fc8181':humidity>60?'#f6ad55':'#68d391';
-        document.getElementById('wClouds').innerHTML=`<span style="color:${cloudCol}">${clouds}%</span>`;
-        document.getElementById('wHumidity').innerHTML=`<span style="color:${humCol}">${humidity}%</span>`;
-        document.getElementById('wTemp').innerText=temp+'°C';
-        document.getElementById('wWind').innerText=wind+' km/h';
-        document.getElementById('wSeeing').innerText=seeing;
-        document.getElementById('wSeeingNote').innerText=seeingNote;
-        document.getElementById('wLocation').innerText=`Lat ${lat.toFixed(2)}° Lon ${lon.toFixed(2)}°`;
-        document.getElementById('wDesc').innerText=weatherDesc(c.weather_code);
-        if(wRow) wRow.style.display='block';
+        if      (clouds > 80)                              { seeing = '❌ Poor';     seeingNote = 'Too cloudy'; }
+        else if (humidity > 85)                            { seeing = '⚠️ Fair';     seeingNote = 'High humidity'; }
+        else if (wind > 30)                                { seeing = '⚠️ Fair';     seeingNote = 'High wind'; }
+        else if (clouds < 20 && humidity < 60 && wind < 15){ seeing = '✅ Good';     seeingNote = 'Good conditions'; }
+        else                                               { seeing = '🔶 Moderate'; seeingNote = 'Check later'; }
+
+        // ── Advanced sky quality computation (modular) ───────────────────────
+        const sq = computeSkyQuality({ clouds, humidity, wind });
+        window._skyQuality = sq; // store globally for smart-banner re-evaluation on mode change
+
+        // ── Populate basic weather fields ────────────────────────────────────
+        const cloudCol = clouds > 60 ? '#fc8181' : clouds > 30 ? '#f6ad55' : '#68d391';
+        const humCol   = humidity > 80 ? '#fc8181' : humidity > 60 ? '#f6ad55' : '#68d391';
+        document.getElementById('wClouds').innerHTML   = `<span style="color:${cloudCol}">${clouds}%</span>`;
+        document.getElementById('wHumidity').innerHTML = `<span style="color:${humCol}">${humidity}%</span>`;
+        document.getElementById('wTemp').innerText     = temp + '°C';
+        document.getElementById('wWind').innerText     = wind + ' km/h';
+        document.getElementById('wSeeing').innerText   = seeing;
+        document.getElementById('wSeeingNote').innerText = seeingNote;
+        document.getElementById('wLocation').innerText = `Lat ${lat.toFixed(2)}° Lon ${lon.toFixed(2)}°`;
+        document.getElementById('wDesc').innerText     = weatherDesc(c.weather_code);
+
+        // ── Populate advanced sky quality fields ─────────────────────────────
+        const starsHTML = Array.from({length:5},(_,i) =>
+          `<span style="color:${i < sq.seeingScore ? sq.seeingColor : 'var(--border)'}">★</span>`
+        ).join('');
+        document.getElementById('wAstroSeeingLabel').innerHTML =
+          `<span style="color:${sq.seeingColor}">${sq.seeingScore}/5 — ${sq.seeingLabel}</span>`;
+        document.getElementById('wAstroSeeingStars').innerHTML = starsHTML;
+        document.getElementById('wAstroSeeingNote').innerText  = sq.seeingNote;
+        document.getElementById('wTransparency').innerHTML =
+          `<span style="color:${sq.transparencyColor}">${sq.transparency}</span>`;
+        document.getElementById('wTransparencyNote').innerText = sq.transparencyNote;
+        const pill = document.getElementById('wImagingSuit');
+        pill.innerHTML    = sq.suitLabel;
+        pill.style.cssText = `font-size:0.78rem;font-weight:700;padding:5px 14px;border-radius:20px;
+          border:1px solid ${sq.suitBorder};color:${sq.suitCol};font-family:var(--font-mono);
+          background:${sq.suitBg};`;
+
+        if (wRow) wRow.style.display = 'block';
+
+        // ── Trigger smart banner ─────────────────────────────────────────────
+        updateSkyQualityBanner();
+
       } catch(e) {
         clearTimeout(timer);
-        const isTimeout=e.name==='AbortError';
-        document.getElementById('wSeeing').innerText=isTimeout?'⏱️ Timeout':'❌ Offline';
-        document.getElementById('wSeeingNote').innerText=isTimeout?'Request exceeded 5s':'No connection';
-        ['wClouds','wHumidity','wTemp','wWind'].forEach(id=>{
-          const el=document.getElementById(id); if(el) el.innerHTML='—';
+        const isTimeout = e.name === 'AbortError';
+        document.getElementById('wSeeing').innerText         = isTimeout ? '⏱️ Timeout' : '❌ Offline';
+        document.getElementById('wSeeingNote').innerText     = isTimeout ? 'Request exceeded 5s' : 'No connection';
+        document.getElementById('wAstroSeeingLabel').innerText = '—';
+        document.getElementById('wAstroSeeingStars').innerText = '';
+        document.getElementById('wAstroSeeingNote').innerText  = '';
+        document.getElementById('wTransparency').innerText   = '—';
+        document.getElementById('wTransparencyNote').innerText = '';
+        document.getElementById('wImagingSuit').innerText    = '—';
+        ['wClouds','wHumidity','wTemp','wWind'].forEach(id => {
+          const el = document.getElementById(id); if (el) el.innerHTML = '—';
         });
-        document.getElementById('wLocation').innerText=isTimeout?'Request timed out':'Weather unavailable';
-        document.getElementById('wDesc').innerText=isTimeout?'Check connection speed':'Connect to load data';
-        if(wRow) wRow.style.display='block';
+        document.getElementById('wLocation').innerText = isTimeout ? 'Request timed out' : 'Weather unavailable';
+        document.getElementById('wDesc').innerText     = isTimeout ? 'Check connection speed' : 'Connect to load data';
+        if (wRow) wRow.style.display = 'block';
+        if (sqBanner) sqBanner.style.display = 'none';
       }
     }
 
@@ -2302,11 +3312,15 @@
       const notes = document.getElementById('sessionNotes').value.trim();
       const date = document.getElementById('obsDate').value || new Date().toISOString().split('T')[0];
       const bortle = document.getElementById('bortleSelect').value;
+      const mode = (document.getElementById('obsMode') || {}).value || 'deep_sky';
+      const isStarTrails = mode === 'star_trails';
       const entry = {
         date, id: obj.id, name: obj.name,
         exp: obj.settings.exp, gain: obj.settings.gain,
         filter: obj.settings.filter, frames: obj.settings.frames,
-        bortle: bortle, lat: userLat, lon: userLon, notes
+        bortle, lat: userLat, lon: userLon, notes,
+        mode,                                    // ← new: mode field
+        starStax: isStarTrails                   // ← new: StarStaX flag
       };
       sessionLog.push(entry);
       try { localStorage.setItem('dwarf_log', JSON.stringify(sessionLog)); } catch(e){}
@@ -2326,18 +3340,27 @@
       }
       exportBtn.style.display = 'inline-block';
       clearBtn.style.display = 'inline-block';
-      list.innerHTML = sessionLog.slice().reverse().map((e,i) =>
-        `<div style="padding:6px 0;border-bottom:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+      list.innerHTML = sessionLog.slice().reverse().map((e,i) => {
+        // StarStaX badge — shown for any entry with starStax flag OR mode === star_trails
+        const showStarStax = e.starStax || e.mode === 'star_trails';
+        const starStaxBadge = showStarStax
+          ? `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(183,148,244,0.15);
+               border:1px solid var(--accent);color:var(--accent);border-radius:4px;
+               padding:2px 7px;font-size:0.68rem;font-weight:700;font-family:var(--font-mono);
+               white-space:nowrap;">⚙️ Ready for StarStaX</span>`
+          : '';
+        return `<div style="padding:6px 0;border-bottom:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
           <span style="color:var(--accent);font-family:var(--font-mono);font-weight:700;">${e.id}</span>
           <span>${e.date}</span>
           <span>⏱️${e.exp}</span>
           <span>📶${e.gain}</span>
           <span>⭕${e.filter}</span>
           <span>🌆B${e.bortle}</span>
+          ${starStaxBadge}
           ${e.notes ? `<span style="color:var(--text-sub);font-style:italic;">"${e.notes}"</span>` : ''}
           <button onclick="removeLog(${sessionLog.length-1-i})" style="margin-left:auto;background:none;border:none;color:var(--text-sub);cursor:pointer;font-size:0.8rem;">✕</button>
-        </div>`
-      ).join('');
+        </div>`;
+      }).join('');
     }
 
     function removeLog(idx) {
@@ -2354,10 +3377,24 @@
     }
 
     function exportCSV() {
-      const header = 'Date,Object ID,Object Name,Exposure,Gain,Filter,Frames,Bortle,Latitude,Longitude,Notes';
-      const rows = sessionLog.map(e =>
-        [e.date,e.id,`"${e.name}"`,e.exp,e.gain,e.filter,e.frames,e.bortle,e.lat,e.lon,`"${e.notes||''}"`].join(',')
-      );
+      const header = 'Date,Object ID,Object Name,Exposure,Gain,Filter,Frames,Bortle,Latitude,Longitude,Mode,Notes';
+      const rows = sessionLog.map(e => {
+        const isStarTrails = e.starStax || e.mode === 'star_trails';
+        // Append StarStaX processing instruction to Notes column for Star Trails rows
+        let notesVal = e.notes || '';
+        if (isStarTrails) {
+          const suffix = 'Process with StarStaX using Gap Filling mode.';
+          notesVal = notesVal ? `${notesVal} | ${suffix}` : suffix;
+        }
+        const modeLabel = e.mode || 'deep_sky';
+        return [
+          e.date, e.id, `"${e.name}"`,
+          e.exp, e.gain, e.filter, e.frames,
+          e.bortle, e.lat, e.lon,
+          modeLabel,
+          `"${notesVal}"`
+        ].join(',');
+      });
       const csv = [header, ...rows].join('\n');
       const blob = new Blob([csv], {type:'text/csv'});
       const url = URL.createObjectURL(blob);
@@ -2505,6 +3542,18 @@
     // Auto-build on page load after a short delay (so userLat/Lon are set)
     setTimeout(() => buildTonight(), 800);
 
+    // Restore saved observation mode
+    (function() {
+      try {
+        const savedMode = localStorage.getItem('dwarf_obs_mode');
+        if (savedMode && savedMode !== 'deep_sky') {
+          const sel = document.getElementById('obsMode');
+          if (sel) sel.value = savedMode;
+          switchObsMode(savedMode);
+        }
+      } catch(e) {}
+    })();
+
   </script>
 
   <!-- ═══════════════════════════════════════════════════════════════════════
@@ -2609,6 +3658,69 @@
       const dismissBtn = document.getElementById('swDismissBtn');
       if (updateBtn)  updateBtn.addEventListener('click', applyUpdate);
       if (dismissBtn) dismissBtn.addEventListener('click', hideUpdateBanner);
+      
+      // Add Observation Modes Guide Table at the end of tips section if it exists
+      const tipsSection = document.querySelector('.tips-section');
+      if (tipsSection) {
+        const guideDiv = document.createElement('div');
+        guideDiv.innerHTML = `
+          <h3 style="color: var(--accent); margin: 30px 0 15px;">Observation Modes Guide</h3>
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; color: var(--text-sub);">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--border); text-align: left;">
+                  <th style="padding: 10px;">Mode</th>
+                  <th style="padding: 10px;">Exp</th>
+                  <th style="padding: 10px;">Gain</th>
+                  <th style="padding: 10px;">Frames</th>
+                  <th style="padding: 10px;">Bortle</th>
+                  <th style="padding: 10px;">Moon</th>
+                  <th style="padding: 10px;">Difficulty</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom: 1px solid var(--border);">
+                  <td style="padding: 10px; color: var(--accent); font-weight: 700;">Deep Sky</td>
+                  <td style="padding: 10px;">15s</td>
+                  <td style="padding: 10px;">80</td>
+                  <td style="padding: 10px;">300+</td>
+                  <td style="padding: 10px;">1-9</td>
+                  <td style="padding: 10px;">&lt;100%</td>
+                  <td style="padding: 10px;">🟡 Medium</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                  <td style="padding: 10px; color: var(--accent); font-weight: 700;">Milky Way</td>
+                  <td style="padding: 10px;">10s</td>
+                  <td style="padding: 10px;">80</td>
+                  <td style="padding: 10px;">30-60</td>
+                  <td style="padding: 10px;">1-4</td>
+                  <td style="padding: 10px;">&lt;30%</td>
+                  <td style="padding: 10px;">🟢 Easy</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                  <td style="padding: 10px; color: var(--accent); font-weight: 700;">Star Trails</td>
+                  <td style="padding: 10px;">30s</td>
+                  <td style="padding: 10px;">60</td>
+                  <td style="padding: 10px;">100+</td>
+                  <td style="padding: 10px;">1-7</td>
+                  <td style="padding: 10px;">&lt;50%</td>
+                  <td style="padding: 10px;">🟢 Easy</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                  <td style="padding: 10px; color: var(--accent); font-weight: 700;">Time-Lapse</td>
+                  <td style="padding: 10px;">1s</td>
+                  <td style="padding: 10px;">40</td>
+                  <td style="padding: 10px;">600+</td>
+                  <td style="padding: 10px;">1-9</td>
+                  <td style="padding: 10px;">&lt;100%</td>
+                  <td style="padding: 10px;">🟡 Medium</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+        tipsSection.appendChild(guideDiv);
+      }
     });
   })();
   </script>
