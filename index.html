@@ -131,6 +131,59 @@
     }
     .tag:hover, .tag.active { border-color: var(--accent); color: var(--accent); }
     
+    /* Star Trails Target Selector */
+    .star-trails-selector {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .star-trails-selector.active {
+      display: block;
+    }
+    .star-trails-title {
+      color: var(--accent);
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .star-trails-select {
+      width: 100%;
+      background: #000;
+      border: 1px solid var(--border);
+      color: var(--accent);
+      padding: 12px;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
+    .star-trails-select:focus {
+      border-color: var(--accent);
+      outline: none;
+    }
+    .star-trails-notes {
+      background: rgba(183, 148, 244, 0.08);
+      border: 1px solid rgba(183, 148, 244, 0.2);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 0.85rem;
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+    .star-trails-notes strong {
+      color: var(--accent);
+    }
+    
     /* HDR TOGGLE SWITCH */
     .hdr-toggle-container {
       background: var(--bg-panel);
@@ -380,6 +433,19 @@
       .icon-box { width: 32px; height: 32px; font-size: 1rem; }
       body { padding: 12px; }
     }
+
+    /* DYNAMIC UX INFO BANNER STYLES */
+    .banner-info-ux {
+        background-color: rgba(255, 193, 7, 0.15);
+        border-left: 4px solid #ffc107;
+        color: #ffe082;
+        padding: 10px 14px;
+        margin-top: 12px;
+        border-radius: 4px;
+        font-size: 0.9em;
+        line-height: 1.4;
+        display: none;
+    }
   </style>
 </head>
 <body>
@@ -399,103 +465,20 @@
       </button>
       <div id="guideContent" style="display:none;background:var(--bg-panel);border:1px solid rgba(183,148,244,0.15);border-top:none;border-radius:0 0 10px 10px;padding:20px 24px;">
         <div style="margin-bottom:22px;">
-          <div style="font-family:var(--font-mono);font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);">📍 1 · First things first: set your location</div>
-          <p style="font-size:0.82rem;color:var(--text-sub);line-height:1.7;margin-bottom:10px;">When you open the app, the first thing to do is set your observing location. You can do this in three ways:</p>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:10px;">
-            <div style="background:var(--bg-row);border-radius:8px;padding:11px 13px;border:1px solid var(--border);font-size:0.8rem;color:var(--text-sub);line-height:1.6;">🛰️ <strong style="color:var(--text-main);">Auto GPS</strong> — tap "📍 GPS" and the app detects where you are. Most accurate method.</div>
-            <div style="background:var(--bg-row);border-radius:8px;padding:11px 13px;border:1px solid var(--border);font-size:0.8rem;color:var(--text-sub);line-height:1.6;">📋 <strong style="color:var(--text-main);">Pick from the list</strong> — observatories, mountain sites, cities. Already built in.</div>
-            <div style="background:var(--bg-row);border-radius:8px;padding:11px 13px;border:1px solid var(--border);font-size:0.8rem;color:var(--text-sub);line-height:1.6;">✏️ <strong style="color:var(--text-main);">Manual coordinates</strong> — type your latitude and longitude directly.</div>
-          </div>
-          <div style="background:rgba(183,148,244,0.07);border-radius:7px;padding:10px 13px;border:1px solid rgba(183,148,244,0.18);font-size:0.78rem;color:var(--text-sub);line-height:1.6;">💡 Your location tells the app which objects you can see tonight, when they reach their highest point in the sky, and how much light pollution surrounds you.</div>
+          <div style="font-family:var(--font-mono);font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);">📍 1 · SET YOUR ENVIRONMENT</div>
+          <p style="font-size:0.82rem;color:var(--text-sub);line-height:1.7;margin-bottom:10px;">Select location and Bortle scale. Live wind and moon data are pulled to calibrate curves.</p>
         </div>
         <div style="margin-bottom:22px;">
-          <div style="font-family:var(--font-mono);font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);">🌆 Light Pollution (Bortle Scale)</div>
-          <p style="font-size:0.82rem;color:var(--text-sub);line-height:1.7;margin-bottom:10px;">Once the app finds your location it automatically estimates how dark your sky is on a scale from 1 to 9. You can correct it manually if you know the site better than the estimate.</p>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:6px;">
-            <div style="background:var(--bg-row);border-radius:7px;padding:9px 12px;border:1px solid rgba(104,211,145,0.25);font-size:0.78rem;color:var(--text-sub);line-height:1.5;"><span style="color:#68d391;font-weight:700;">1–2</span> &nbsp;Pristine dark sky, remote site</div>
-            <div style="background:var(--bg-row);border-radius:7px;padding:9px 12px;border:1px solid rgba(104,211,145,0.15);font-size:0.78rem;color:var(--text-sub);line-height:1.5;"><span style="color:#68d391;font-weight:700;">3–4</span> &nbsp;Rural sky, little light pollution</div>
-            <div style="background:var(--bg-row);border-radius:7px;padding:9px 12px;border:1px solid rgba(246,173,85,0.2);font-size:0.78rem;color:var(--text-sub);line-height:1.5;"><span style="color:#f6ad55;font-weight:700;">5–6</span> &nbsp;Suburban sky</div>
-            <div style="background:var(--bg-row);border-radius:7px;padding:9px 12px;border:1px solid rgba(252,129,129,0.2);font-size:0.78rem;color:var(--text-sub);line-height:1.5;"><span style="color:#fc8181;font-weight:700;">7–9</span> &nbsp;Urban / city centre, orange sky glow</div>
-          </div>
+          <div style="font-family:var(--font-mono);font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);">🔄 2 · CHOOSE YOUR OBSERVATION MODE</div>
+          <p style="font-size:0.82rem;color:var(--text-sub);line-height:1.7;margin-bottom:10px;">Switch between Deep Sky, Milky Way, Star Trails, or Time-Lapse. The UI dynamically shape-shifts.</p>
         </div>
         <div style="margin-bottom:22px;">
-          <div style="font-family:var(--font-mono);font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);">🌤️ 2 · Weather & Sky Quality</div>
-          <p style="font-size:0.82rem;color:var(--text-sub);line-height:1.7;margin-bottom:12px;">Press the <strong style="color:var(--text-main);">Weather</strong> button to load real-time conditions. From cloud cover, humidity and wind speed the app computes two numbers that matter most for astrophotography:</p>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-bottom:12px;">
-            <div style="background:var(--bg-row);border-radius:8px;padding:13px;border:1px solid var(--border);">
-              <div style="font-size:0.78rem;font-weight:700;color:var(--text-main);margin-bottom:8px;">🌠 Astronomical Seeing (1–5 stars)</div>
-              <p style="font-size:0.78rem;color:var(--text-sub);line-height:1.6;margin-bottom:8px;">Measures how stable the atmosphere is above you. Even with a clear sky, turbulent air makes stars wobble and ruins focus.</p>
-              <div style="display:flex;flex-direction:column;gap:4px;font-size:0.75rem;color:var(--text-sub);">
-                <span><span style="color:#fc8181;">★ 1/5</span> — Very Poor · stars dancing, photos blurry</span>
-                <span><span style="color:#fc8181;">★★ 2/5</span> — Poor · stacking efficiency reduced</span>
-                <span><span style="color:#f6ad55;">★★★ 3/5</span> — Fair · acceptable for bright targets</span>
-                <span><span style="color:#68d391;">★★★★ 4/5</span> — Good · great for most DSO imaging</span>
-                <span><span style="color:#68d391;">★★★★★ 5/5</span> — Excellent · exceptional stability, don't miss it!</span>
-              </div>
-            </div>
-            <div style="background:var(--bg-row);border-radius:8px;padding:13px;border:1px solid var(--border);">
-              <div style="font-size:0.78rem;font-weight:700;color:var(--text-main);margin-bottom:8px;">🔍 Sky Transparency</div>
-              <p style="font-size:0.78rem;color:var(--text-sub);line-height:1.6;margin-bottom:8px;">How well starlight passes through the atmosphere. High humidity and thin haze reduce it even without visible cloud cover.</p>
-              <div style="display:flex;flex-direction:column;gap:4px;font-size:0.75rem;color:var(--text-sub);">
-                <span><span style="color:#fc8181;font-weight:700;">🔴 Low</span> — haze or high humidity, significant scatter</span>
-                <span><span style="color:#f6ad55;font-weight:700;">🟡 Medium</span> — moderate atmospheric haze</span>
-                <span><span style="color:#68d391;font-weight:700;">🟢 High</span> — good photon throughput</span>
-                <span><span style="color:#68d391;font-weight:700;">🟢 Superb</span> — crystal-clear air, a night to remember</span>
-              </div>
-            </div>
-          </div>
-          <div style="background:rgba(104,211,145,0.07);border-radius:7px;padding:10px 13px;border:1px solid rgba(104,211,145,0.2);font-size:0.78rem;color:var(--text-sub);line-height:1.6;">🏅 <strong style="color:var(--text-main);">The "Night Quality" badge</strong> summarises everything at a glance:&nbsp;<span style="color:#68d391;font-weight:700;">🟢 Excellent</span> · <span style="color:#f6ad55;font-weight:700;">🟡 Good</span> · <span style="color:#f6ad55;font-weight:700;">🟠 Marginal</span> · <span style="color:#fc8181;font-weight:700;">🔴 Poor</span></div>
+          <div style="font-family:var(--font-mono);font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);">📊 3 · UNDERSTAND ADAPTIVE EXPOSURE & FLOORS</div>
+          <p style="font-size:0.82rem;color:var(--text-sub);line-height:1.7;margin-bottom:10px;">Exposure is optimized against Moon/Light Pollution. Hardware safety floors (10s Galaxies/Nebulae, 5s Clusters) are strictly enforced.</p>
         </div>
         <div style="margin-bottom:22px;">
-          <div style="font-family:var(--font-mono);font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);">⚠️ 3 · Smart Banners — the app warns you automatically</div>
-          <p style="font-size:0.82rem;color:var(--text-sub);line-height:1.7;margin-bottom:10px;">When conditions are not suited to your selected mode, a coloured alert appears just below the weather section. You don't need to check anything manually.</p>
-          <div style="display:flex;flex-direction:column;gap:7px;">
-            <div style="background:rgba(246,173,85,0.08);border:1px solid rgba(246,173,85,0.25);border-radius:7px;padding:10px 13px;font-size:0.78rem;color:var(--text-sub);line-height:1.6;">⚠️ <strong style="color:#f6ad55;">Poor seeing with Deep Sky / Milky Way</strong> — if seeing is 1 or 2 out of 5, the app suggests shorter exposures and discarding the worst frames during stacking.</div>
-            <div style="background:rgba(183,148,244,0.08);border:1px solid rgba(183,148,244,0.25);border-radius:7px;padding:10px 13px;font-size:0.78rem;color:var(--text-sub);line-height:1.6;">☁️ <strong style="color:var(--accent);">Time-Lapse cloud opportunity</strong> — if you're in Time-Lapse mode with cloud cover between 20% and 60%, the app flags that moving clouds are perfect for a dynamic video.</div>
-            <div style="background:rgba(104,211,145,0.07);border:1px solid rgba(104,211,145,0.2);border-radius:7px;padding:10px 13px;font-size:0.78rem;color:var(--text-sub);line-height:1.6;">✅ <strong style="color:#68d391;">Excellent seeing for Star Trails</strong> — with seeing 4 or 5 out of 5, the app confirms trails will be sharp and well-defined.</div>
-          </div>
-        </div>
-        <div style="margin-bottom:22px;">
-          <div style="font-family:var(--font-mono);font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);">🌌 4 · Milky Way Mode — automatic checks</div>
-          <p style="font-size:0.82rem;color:var(--text-sub);line-height:1.7;margin-bottom:10px;">When you select <strong style="color:var(--text-main);">Milky Way</strong> mode, the app immediately checks four things:</p>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;">
-            <div style="background:var(--bg-row);border-radius:7px;padding:10px 13px;border:1px solid rgba(252,129,129,0.2);font-size:0.78rem;color:var(--text-sub);line-height:1.6;">🌆 <strong style="color:#fc8181;">Bortle > 4</strong> — red alert: the galactic core will be washed out by artificial light. You need to move to a darker location.</div>
-            <div style="background:var(--bg-row);border-radius:7px;padding:10px 13px;border:1px solid rgba(252,129,129,0.2);font-size:0.78rem;color:var(--text-sub);line-height:1.6;">🌙 <strong style="color:#fc8181;">Moon > 30%</strong> — red alert: wait for a night with a thinner moon. Even a crescent moon ruins Milky Way photos.</div>
-            <div style="background:var(--bg-row);border-radius:7px;padding:10px 13px;border:1px solid rgba(252,129,129,0.2);font-size:0.78rem;color:var(--text-sub);line-height:1.6;">📅 <strong style="color:#fc8181;">Wrong season</strong> — the core is visible only from <strong style="color:var(--text-main);">March to October</strong>. From November to February the app warns you it's not visible tonight.</div>
-            <div style="background:var(--bg-row);border-radius:7px;padding:10px 13px;border:1px solid rgba(246,173,85,0.2);font-size:0.78rem;color:var(--text-sub);line-height:1.6;">💨 <strong style="color:#f6ad55;">Wind > 30 km/h</strong> — orange alert: stabilise the tripod well.</div>
-          </div>
-        </div>
-        <div style="margin-bottom:22px;">
-          <div style="font-family:var(--font-mono);font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);">🧮 5 · Session Calculators</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;">
-            <div style="background:var(--bg-row);border-radius:8px;padding:13px;border:1px solid var(--border);">
-              <div style="font-size:0.78rem;font-weight:700;color:var(--text-main);margin-bottom:7px;">🎞️ Time-Lapse</div>
-              <p style="font-size:0.78rem;color:var(--text-sub);line-height:1.6;margin-bottom:8px;">Enter the desired final video duration (seconds) and frames per second. The app calculates:</p>
-              <ul style="font-size:0.75rem;color:var(--text-sub);line-height:1.7;list-style:none;padding:0;margin:0;">
-                <li>📸 <strong style="color:var(--text-main);">Frames needed</strong> — how many photos to take</li>
-                <li>⏱️ <strong style="color:var(--text-main);">Capture time</strong> — how long to stay out</li>
-                <li>💾 <strong style="color:var(--text-main);">SD Card space</strong> — how many GB it will occupy</li>
-                <li>⚡ <strong style="color:var(--text-main);">Speed-up ratio</strong> — e.g., 90× faster than real-time</li>
-              </ul>
-              <div style="margin-top:9px;background:rgba(252,129,129,0.08);border:1px solid rgba(252,129,129,0.25);border-radius:6px;padding:7px 10px;font-size:0.74rem;color:#fc8181;line-height:1.5;">⚠️ <strong>Deflicker</strong> is mandatory in post-production — without correction the video will flicker. Always lock White Balance and Exposure in manual mode.</div>
-            </div>
-            <div style="background:var(--bg-row);border-radius:8px;padding:13px;border:1px solid var(--border);">
-              <div style="font-size:0.78rem;font-weight:700;color:var(--text-main);margin-bottom:7px;">🌠 Star Trails</div>
-              <p style="font-size:0.78rem;color:var(--text-sub);line-height:1.6;margin-bottom:8px;">Enter how long you want the trails to be (minutes). The app calculates frames, real duration, SD space and estimated battery consumption.</p>
-              <ul style="font-size:0.75rem;color:var(--text-sub);line-height:1.7;list-style:none;padding:0;margin:0 0 9px 0;">
-                <li>🧭 Point <strong style="color:var(--text-main);">North</strong> for concentric circles around Polaris</li>
-                <li>🧭 Point <strong style="color:var(--text-main);">East/West</strong> for dramatic arcs in the landscape</li>
-                <li>⏱️ Keep the gap between frames at <strong style="color:var(--text-main);">0–1 seconds</strong> for continuous trails</li>
-              </ul>
-              <div style="background:rgba(246,173,85,0.08);border:1px solid rgba(246,173,85,0.22);border-radius:6px;padding:7px 10px;font-size:0.74rem;color:#f6ad55;line-height:1.5;">🔋 Session over 1 hour? The app warns you: an <strong>external power bank</strong> is required, the internal battery won't last.</div>
-            </div>
-          </div>
-        </div>
-        <div style="margin-bottom:22px;">
-          <div style="font-family:var(--font-mono);font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);">⚙️ 6 · Session Log and StarStaX</div>
-          <p style="font-size:0.82rem;color:var(--text-sub);line-height:1.7;margin-bottom:10px;">Each time you press <strong style="color:var(--text-main);">+ Add</strong> to save a session in Star Trails mode, the log automatically shows the badge <span style="display:inline-flex;align-items:center;gap:3px;background:rgba(183,148,244,0.15);border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:1px 7px;font-size:0.72rem;font-weight:700;font-family:var(--font-mono);">⚙️ Ready for StarStaX</span></p>
-          <p style="font-size:0.82rem;color:var(--text-sub);line-height:1.7;margin-bottom:10px;">When you export the log to <strong style="color:var(--text-main);">CSV</strong>, the Notes column for each Star Trails session already contains the phrase: <em style="color:var(--text-main);">"Process with StarStaX using Gap Filling mode."</em> — so you never forget how to process those frames, even months later.</p>
-          <div style="background:rgba(183,148,244,0.07);border-radius:7px;padding:10px 13px;border:1px solid rgba(183,148,244,0.18);font-size:0.78rem;color:var(--text-sub);line-height:1.6;">💡 <strong style="color:var(--text-main);">StarStaX</strong> is the free software (Win/Mac/Linux) that merges all photos into a single image with star trails. Use <strong>Gap Filling</strong> mode for continuous trails even with a 1‑second gap between frames.</div>
+          <div style="font-family:var(--font-mono);font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);">🎯 4 · EXECUTE THE WORKFLOW</div>
+          <p style="font-size:0.82rem;color:var(--text-sub);line-height:1.7;margin-bottom:10px;">Check real-time alerts (wind, battery, moon) and use the HDR Session Workflow steps to configure the DWARF app.</p>
         </div>
         <div style="background:rgba(183,148,244,0.06);border-radius:8px;padding:14px 16px;border:1px solid rgba(183,148,244,0.18);">
           <div style="font-family:var(--font-mono);font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">🚀 The ideal workflow for every session</div>
@@ -641,8 +624,46 @@
           <option value="time_lapse">⏱️ Time-Lapse (Clouds, Moon, Planets)</option>
         </select>
       </div>
+      
+      <!-- Deep Sky Search Box (shown by default, hidden by JS when Star Trails is active) -->
       <div class="search-box"><input type="text" id="search" placeholder="Search: M31, M42, Andromeda..."><button onclick="find()">🔍 SCAN</button></div>
       <div class="tags"><div class="tag" onclick="load('M1')">M1</div><div class="tag" onclick="load('M13')">M13</div><div class="tag" onclick="load('M27')">M27</div><div class="tag" onclick="load('M31')">M31</div><div class="tag" onclick="load('M42')">M42</div><div class="tag" onclick="load('M45')">M45</div><div class="tag" onclick="load('M51')">M51</div><div class="tag" onclick="load('M57')">M57</div><div class="tag" onclick="load('M81')">M81</div><div class="tag" onclick="load('M82')">M82</div><div class="tag" onclick="load('M101')">M101</div><div class="tag" onclick="load('NGC 7000')">NGC 7000</div></div>
+      
+      <!-- Star Trails Target Selector (hidden by default, shown by JS when Star Trails is active) -->
+      <div id="starTrailsTargetSelector" class="star-trails-selector">
+        <div class="star-trails-title">
+          <span>💫 Star Trails Target</span>
+          <span style="font-size: 0.7rem; color: var(--text-sub);">Select your pointing direction</span>
+        </div>
+        <select id="starTrailsTargetSelect" class="star-trails-select">
+          <option value="polaris">🧭 Polaris (North Star)</option>
+          <option value="equator">🌠 Celestial Equator (Orion)</option>
+          <option value="milkyway">🌌 Milky Way Core</option>
+          <option value="zenith">⬆️ Zenith</option>
+          <option value="custom">🏔️ Custom Landscape (Free Pointing)</option>
+        </select>
+        <div id="starTrailsTargetNotes" class="star-trails-notes">
+          <strong>ℹ️ Target Notes:</strong><br>
+          Puntamento Nord per cerchi concentrici completi.
+        </div>
+      </div>
+    </div>
+
+    <!-- GLOBAL SESSION LOG AND CSV EXPORT (MOVED FROM DEEP SKY SECTION) -->
+    <div id="globalExportSection" style="margin-bottom:16px;">
+      <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:16px 20px;">
+        <div style="font-size:0.75rem;color:var(--text-sub);background:rgba(79,143,255,0.07);border:1px solid rgba(79,143,255,0.2);border-radius:6px;padding:6px 12px;margin-bottom:10px;line-height:1.5;">💡 <strong>Stellarium</strong>: open object in Stellarium Web for sky planning &nbsp;|&nbsp; <strong>Session Log</strong>: add notes &amp; export your sessions as CSV</div>
+        <a id="stellariumLink" href="#" target="_blank" style="display:inline-block;margin-bottom:14px;font-size:0.8rem;padding:6px 14px;border-radius:6px;background:rgba(183,148,244,0.15);color:#b794f4;border:1px solid rgba(183,148,244,0.3);text-decoration:none;font-weight:600;">🔭 View in Stellarium Web</a>
+        <div style="font-family:var(--font-mono);font-size:0.8rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">📊 Session Log</div>
+        <div style="font-size:0.73rem;color:var(--text-sub);margin-bottom:8px;opacity:0.85;">Add a note and click <strong>➕ Add</strong> to log this session. After adding, <strong>⬇️ CSV</strong> will appear to export all your logs.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+          <input id="sessionNotes" type="text" placeholder="Add notes (optional)..." style="flex:1;min-width:180px;background:var(--bg-row);border:1px solid var(--border);color:var(--text-primary);padding:7px 12px;border-radius:6px;font-size:0.82rem;outline:none;">
+          <button onclick="addToLog()" style="background:var(--accent);border:none;border-radius:6px;color:#fff;padding:7px 14px;font-family:var(--font-mono);font-size:0.78rem;cursor:pointer;">➕ Add</button>
+          <button onclick="exportCSV()" id="exportBtn" style="display:none;background:transparent;border:1px solid #68d391;border-radius:6px;color:#68d391;padding:7px 14px;font-family:var(--font-mono);font-size:0.78rem;cursor:pointer;">⬇️ CSV</button>
+          <button onclick="clearLog()" id="clearBtn" style="display:none;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);padding:7px 14px;font-family:var(--font-mono);font-size:0.78rem;cursor:pointer;">🗑️ Clear</button>
+        </div>
+        <div id="sessionLogList" style="font-size:0.78rem;color:var(--text-sub);"></div>
+      </div>
     </div>
 
     <div id="panel_milky_way" style="display:none;"><div id="mw_alerts" style="margin-bottom:16px;"></div><div style="background:linear-gradient(135deg,rgba(183,148,244,0.08),rgba(183,148,244,0.15));border:2px solid var(--accent);border-radius:12px;padding:20px;margin-bottom:16px;"><div style="color:var(--accent);font-size:1rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;">🌌 Milky Way — Ideal Conditions</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px;"><div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);"><div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">⏱️ Exposure</div><div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:var(--accent);">15–25 s</div><div style="font-size:0.75rem;color:var(--text-sub);">Avoid star trailing</div></div><div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);"><div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">📶 Gain</div><div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:var(--accent);">60–80</div><div style="font-size:0.75rem;color:var(--text-sub);">Higher for darker skies</div></div><div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);"><div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">⭕ Filter</div><div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:#68d391;">Astro / None</div><div style="font-size:0.75rem;color:var(--danger);">NO Dual-band!</div></div><div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);"><div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🌆 Bortle Ideal</div><div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:#68d391;">≤ 4</div><div style="font-size:0.75rem;color:var(--text-sub);">Dark sky essential</div></div><div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);"><div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🌙 Max Moon</div><div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:#f6ad55;">30%</div><div style="font-size:0.75rem;color:var(--text-sub);">New moon preferred</div></div><div style="background:var(--bg-panel);border-radius:8px;padding:12px;border:1px solid var(--border);"><div style="font-size:0.7rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">📅 Season (N hemi)</div><div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:#68d391;">Mar–Oct</div><div style="font-size:0.75rem;color:var(--text-sub);">Core: Jun–Aug peak</div></div></div><div style="font-size:0.82rem;color:var(--text-sub);background:rgba(183,148,244,0.07);border-radius:6px;padding:10px 14px;line-height:1.6;">📸 <strong style="color:var(--text-main);">Composition tip:</strong> Always include an interesting foreground (trees, mountains, buildings) — this is what separates great Milky Way shots from ordinary ones. Use manual focus locked on a bright star, then reframe.</div></div><div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px;"><div style="color:var(--accent);font-size:0.9rem;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;">🧮 Session Calculator</div><div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:14px;"><div><div style="font-size:0.72rem;color:var(--text-sub);margin-bottom:5px;text-transform:uppercase;">Exposure (s)</div><input type="number" id="mw_exp" value="20" min="5" max="60" style="width:80px;background:#000;border:1px solid var(--border);color:var(--accent);padding:7px 10px;border-radius:6px;font-family:monospace;font-size:1rem;outline:none;" oninput="calcMW()"></div><div><div style="font-size:0.72rem;color:var(--text-sub);margin-bottom:5px;text-transform:uppercase;">Frames</div><input type="number" id="mw_frames" value="30" min="10" max="500" style="width:80px;background:#000;border:1px solid var(--border);color:var(--accent);padding:7px 10px;border-radius:6px;font-family:monospace;font-size:1rem;outline:none;" oninput="calcMW()"></div></div><div id="mw_calc_result" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;"><div style="background:var(--bg-row);border-radius:8px;padding:10px;border:1px solid var(--border);"><div style="font-size:0.68rem;color:var(--text-sub);margin-bottom:3px;">SESSION TIME</div><div id="mw_r_session" style="font-family:monospace;font-size:1rem;font-weight:700;color:#68d391;">—</div></div><div style="background:var(--bg-row);border-radius:8px;padding:10px;border:1px solid var(--border);"><div style="font-size:0.68rem;color:var(--text-sub);margin-bottom:3px;">STORAGE (~30MB/frame)</div><div id="mw_r_storage" style="font-family:monospace;font-size:1rem;font-weight:700;color:var(--accent);">—</div></div></div></div><div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px;"><div style="color:var(--accent);font-size:0.9rem;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;">✅ Pre-Session Checklist</div><div id="mw_checklist" style="display:flex;flex-direction:column;gap:8px;"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);"><input type="checkbox" id="mw_chk1" onchange="saveMWChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;"><span style="font-size:0.88rem;color:var(--text-main);">🔋 Battery fully charged (or external power bank connected)</span></label><label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);"><input type="checkbox" id="mw_chk2" onchange="saveMWChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;"><span style="font-size:0.88rem;color:var(--text-main);">💾 SD card with sufficient free space (≥16 GB)</span></label><label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);"><input type="checkbox" id="mw_chk3" onchange="saveMWChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;"><span style="font-size:0.88rem;color:var(--text-main);">📐 Tripod stable and level (low center of gravity)</span></label><label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);"><input type="checkbox" id="mw_chk4" onchange="saveMWChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;"><span style="font-size:0.88rem;color:var(--text-main);">🔭 Manual focus locked on a bright star (Vega, Altair, Antares)</span></label><label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);"><input type="checkbox" id="mw_chk5" onchange="saveMWChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;"><span style="font-size:0.88rem;color:var(--text-main);">🌑 Confirmed moon phase ≤ 30% illumination</span></label><label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg-row);border-radius:8px;border:1px solid var(--border);"><input type="checkbox" id="mw_chk6" onchange="saveMWChecklist()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;"><span style="font-size:0.88rem;color:var(--text-main);">🌍 Interesting foreground element framed and in focus</span></label></div><button onclick="resetMWChecklist()" style="margin-top:12px;background:transparent;border:1px solid var(--border);color:var(--text-sub);padding:6px 14px;border-radius:6px;font-size:0.78rem;cursor:pointer;">🗑️ Reset checklist</button></div></div>
@@ -653,6 +674,10 @@
 
     <div class="tech-sheet" id="sheet">
       <div id="corrBanner" style="display:none;margin:12px 16px 0;padding:12px 16px;border-radius:8px;border:1px solid;font-size:0.8rem;line-height:1.5;"></div>
+      
+      <!-- DYNAMIC UX INFO BANNER (placed right below corrBanner and above sheet-header) -->
+      <div id="banner-info-exposure" class="banner-info-ux"></div>
+      
       <div class="sheet-header" style="display:flex;align-items:center;gap:16px;"><img id="objThumb" src="" alt="" style="width:90px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--border);display:none;flex-shrink:0;" onerror="this.style.display='none'"><div style="flex:1;"><h2 id="objId" style="display:flex;align-items:center;gap:10px;">M1 <span id="typeIcon" style="font-size:1.2rem;opacity:0.8;"></span></h2><div class="type"><span id="objName">Crab Nebula</span> · <span id="objType">Supernova Remnant</span></div><div style="margin-top:8px;"><a id="astrobinLink" href="#" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:rgba(183,148,244,0.1);color:var(--accent);padding:4px 10px;border-radius:4px;font-size:0.75rem;text-decoration:none;font-weight:700;border:1px solid var(--accent);">🖼️ View on Astrobin</a></div></div><span class="badge medium" id="objDiff">INTERMEDIATE</span></div>
       <div class="row"><div class="icon-box">🛰️</div><div class="content"><span class="label">Target / Mode</span><span class="value" id="objType2">Supernova Remnant</span><span class="note">Magnitude: <span id="objMag">8.4</span></span></div></div>
       
@@ -674,8 +699,6 @@
       <div class="row"><div class="icon-box">📅</div><div class="content"><span class="label">Best Viewing Months</span><div class="months-list" id="monthsList"></div></div></div>
       <div class="row"><div class="icon-box">💡</div><div class="content"><span class="label">Operational Note</span><span class="value" id="objAdvice" style="font-size:0.95rem; line-height:1.4; color:#a0aec0">Inner filaments benefit from generous integration (3+ hours).</span></div></div>
     </div>
-
-    <div id="exportSection" style="display:none;margin-bottom:16px;"><div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:16px 20px;"><div style="font-size:0.75rem;color:var(--text-sub);background:rgba(79,143,255,0.07);border:1px solid rgba(79,143,255,0.2);border-radius:6px;padding:6px 12px;margin-bottom:10px;line-height:1.5;">💡 <strong>Stellarium</strong>: open object in Stellarium Web for sky planning &nbsp;|&nbsp; <strong>Session Log</strong>: add notes &amp; export your sessions as CSV</div><a id="stellariumLink" href="#" target="_blank" style="display:inline-block;margin-bottom:14px;font-size:0.8rem;padding:6px 14px;border-radius:6px;background:rgba(183,148,244,0.15);color:#b794f4;border:1px solid rgba(183,148,244,0.3);text-decoration:none;font-weight:600;">🔭 View in Stellarium Web</a><div style="font-family:var(--font-mono);font-size:0.8rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">📊 Session Log</div><div style="font-size:0.73rem;color:var(--text-sub);margin-bottom:8px;opacity:0.85;">Add a note and click <strong>➕ Add</strong> to log this session. After adding, <strong>⬇️ CSV</strong> will appear to export all your logs.</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;"><input id="sessionNotes" type="text" placeholder="Add notes (optional)..." style="flex:1;min-width:180px;background:var(--bg-row);border:1px solid var(--border);color:var(--text-primary);padding:7px 12px;border-radius:6px;font-size:0.82rem;outline:none;"><button onclick="addToLog()" style="background:var(--accent);border:none;border-radius:6px;color:#fff;padding:7px 14px;font-family:var(--font-mono);font-size:0.78rem;cursor:pointer;">➕ Add</button><button onclick="exportCSV()" id="exportBtn" style="display:none;background:transparent;border:1px solid #68d391;border-radius:6px;color:#68d391;padding:7px 14px;font-family:var(--font-mono);font-size:0.78rem;cursor:pointer;">⬇️ CSV</button><button onclick="clearLog()" id="clearBtn" style="display:none;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text-sub);padding:7px 14px;font-family:var(--font-mono);font-size:0.78rem;cursor:pointer;">🗑️ Clear</button></div><div id="sessionLogList" style="font-size:0.78rem;color:var(--text-sub);"></div></div></div>
 
     <div class="tips-section" id="tipsSection"><div class="section-header">💡 Tips for Better Results</div><div class="tips-grid"><div class="tip-card"><div class="tip-icon">🎯</div><h4>Pointing</h4><p>Use the app's star map to locate your target. Ensure "Equatorial Mode" is active for better tracking.</p></div><div class="tip-card"><div class="tip-icon">🌙</div><h4>Environmental Conditions</h4><p id="filterTipText">If light pollution is present (Bortle 5+), use a dual-band filter. Aim for moonless nights for maximum contrast.</p></div><div class="tip-card"><div class="tip-icon">💨</div><h4>Wind / Stability</h4><p>In windy conditions, use a lower tripod and keep gain around 60 with 30-second exposures.</p></div><div class="tip-card"><div class="tip-icon">💻</div><h4>Post-Processing</h4><p>Use software like Siril, PixInsight, or Lightroom to stack frames and enhance contrast after capture.</p></div></div>
       
@@ -754,5 +777,91 @@
   <div id="swUpdateBanner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:9999; background:linear-gradient(90deg,#0e0f14 0%,#1a1b24 100%); border-top:2px solid #b794f4; padding:12px 20px; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; box-shadow:0 -4px 24px rgba(183,148,244,0.2); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;"><span style="color:#e2e8f0;font-size:0.88rem;">🔭 <strong style="color:#b794f4;">New version available!</strong> &nbsp;Tap to update DWARF mini PRO.</span><div style="display:flex;gap:8px;"><button id="swUpdateBtn" style="background:#b794f4; color:#000; border:none; padding:8px 18px; border-radius:7px; font-weight:700; font-size:0.85rem; cursor:pointer;">⬆ Update now</button><button id="swDismissBtn" style="background:transparent; color:#718096; border:1px solid #2a2d37; padding:8px 14px; border-radius:7px; font-size:0.82rem; cursor:pointer;">Later</button></div></div>
 
   <script src="app.js"></script>
+  
+  <!-- JavaScript to control the dynamic UX banner -->
+  <script>
+    (function() {
+        // Wait for DOM to be ready
+        const originalUpdatePlanner = window.updatePlanner;
+        if (originalUpdatePlanner) {
+            window.updatePlanner = function(obj) {
+                // Call original function first
+                originalUpdatePlanner(obj);
+                
+                // Get references to DOM elements
+                const banner = document.getElementById('banner-info-exposure');
+                const adaptedExpElem = document.getElementById('adaptedExp');
+                const baseExpElem = document.getElementById('baseExp');
+                
+                if (!banner || !adaptedExpElem || !baseExpElem) return;
+                
+                // Extract numeric exposure values (remove 's' suffix if present)
+                let adaptedExpStr = adaptedExpElem.innerText;
+                let baseExpStr = baseExpElem.innerText;
+                
+                let adaptedExp = parseFloat(adaptedExpStr);
+                let baseExp = parseFloat(baseExpStr);
+                
+                if (isNaN(adaptedExp) || isNaN(baseExp)) {
+                    banner.style.display = 'none';
+                    return;
+                }
+                
+                // Check if exposure was reduced by more than 40%
+                const reductionRatio = adaptedExp / baseExp;
+                const isReduced = reductionRatio < 0.6;
+                
+                // Check if this object has a minimum floor applied (by looking at the applied correction)
+                // We'll use the floor data from the MINIMUM_FLOORS constant if available
+                let floorApplied = false;
+                let floorValue = null;
+                if (window._lastObj) {
+                    const obj = window._lastObj;
+                    const lowerType = (obj.type || '').toLowerCase();
+                    const lowerAdvice = (obj.advice || '').toLowerCase();
+                    
+                    // Determine floor type (same logic as in app.js)
+                    let floorType = null;
+                    if (lowerType.includes('globular') || lowerType.includes('open') || lowerType.includes('cluster')) {
+                        floorType = 'cluster';
+                    } else if (lowerType.includes('galaxy')) {
+                        floorType = 'galaxy';
+                    } else if (lowerType.includes('nebula') || lowerType.includes('remnant') || lowerType.includes('planetary')) {
+                        floorType = 'nebula';
+                    }
+                    
+                    if (floorType && window.MINIMUM_FLOORS && window.MINIMUM_FLOORS[floorType]) {
+                        floorValue = window.MINIMUM_FLOORS[floorType];
+                        // Check if the adapted exposure equals the floor (or is very close, within 1 second)
+                        if (Math.abs(adaptedExp - floorValue) < 1.5) {
+                            floorApplied = true;
+                        }
+                    }
+                }
+                
+                // Determine banner message
+                if (isReduced && floorApplied && floorValue !== null) {
+                    banner.innerHTML = `⚠️ <strong>Aggressive Optimization:</strong> Exposure reduced to counter current light pollution/moonlight. A safety floor of <strong>${floorValue}s</strong> has been applied to preserve the object's structure.`;
+                    banner.style.display = 'block';
+                } else if (isReduced) {
+                    banner.innerHTML = `✨ <strong>Calculation Note:</strong> Exposure shortened to prevent background washout caused by ambient sky brightness (Bortle/Moon).`;
+                    banner.style.display = 'block';
+                } else {
+                    banner.style.display = 'none';
+                }
+            };
+        }
+        
+        // Also listen for mode switches that might trigger showStarTrailsTarget
+        const originalShowStarTrailsTarget = window.showStarTrailsTarget;
+        if (originalShowStarTrailsTarget) {
+            window.showStarTrailsTarget = function(target) {
+                originalShowStarTrailsTarget(target);
+                const banner = document.getElementById('banner-info-exposure');
+                if (banner) banner.style.display = 'none';
+            };
+        }
+    })();
+  </script>
 </body>
 </html>

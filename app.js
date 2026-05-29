@@ -1,8 +1,18 @@
-// DWARF mini PRO — Main Application Logic v2.0
-// Hardware constraints arrays
+// DWARF mini PRO — Main Application Logic v2.1
+// ============================================
+// HARDWARE CONSTRAINTS (DO NOT MODIFY)
 const ALLOWED_EXPOSURE = [1, 2, 4, 8, 10, 15, 20, 25, 30, 40, 45, 60];
 const ALLOWED_GAIN = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150];
 
+// HARD FLOORS for minimum exposure times (in seconds)
+const MINIMUM_FLOORS = {
+    'galaxy': 10,
+    'nebula': 10,
+    'cluster': 5
+};
+
+// ============================================
+// UTILITY FUNCTIONS
 function snapToAllowed(value, allowedArray) {
     if (value === undefined || value === null) return allowedArray[0];
     let closest = allowedArray[0];
@@ -17,22 +27,46 @@ function snapToAllowed(value, allowedArray) {
     return closest;
 }
 
+function getObjectTypeForFloor(type, advice) {
+    const lowerType = (type || '').toLowerCase();
+    const lowerAdvice = (advice || '').toLowerCase();
+    
+    if (lowerType.includes('globular') || lowerType.includes('open') || lowerType.includes('cluster')) {
+        return 'cluster';
+    }
+    if (lowerType.includes('galaxy')) {
+        return 'galaxy';
+    }
+    if (lowerType.includes('nebula') || lowerType.includes('remnant') || lowerType.includes('planetary')) {
+        return 'nebula';
+    }
+    return null;
+}
+
+function formatDur(sec) {
+    if (sec < 60) return sec + 's';
+    if (sec < 3600) return Math.round(sec / 60) + ' min';
+    return (sec / 3600).toFixed(1) + 'h';
+}
+
 function getCardinalDirectionFromAzimuth(azDegrees) {
     const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
     const index = Math.round(((azDegrees % 360) / 22.5)) % 16;
     return directions[index];
 }
 
-function calculateCardinalDirectionAtTime(obj, date, targetHour) {
-    if (!obj || obj.ra_h === undefined || obj.dec === undefined) return 'Unknown';
-    const pts = getAltCurve(obj.ra_h, obj.dec, date);
-    const targetPoint = pts.find(p => Math.abs(p.h - targetHour) < 0.25);
-    if (targetPoint && targetPoint.az !== undefined) {
-        return getCardinalDirectionFromAzimuth(targetPoint.az);
-    }
-    return 'Calculating...';
-}
+// ============================================
+// STAR TRAILS TARGET DATABASE
+const STAR_TRAILS_TARGETS = [
+    { id: "polaris", name: "Polaris (North Star)", notes: "Point north for complete concentric circles." },
+    { id: "equator", name: "Celestial Equator (Orion)", notes: "Point east/west for straight and diverging arcs." },
+    { id: "milkyway", name: "Milky Way Core", notes: "Wide framing or tracking disabled on the galactic core." },
+    { id: "zenith", name: "Zenith", notes: "Pointing perpendicular to the ground (90°)." },
+    { id: "custom", name: "Custom Landscape (Free Pointing)", notes: "Free pointing with a terrestrial foreground element." }
+];
+let currentStarTrailsTarget = STAR_TRAILS_TARGETS[0];
 
+// ============================================
 // OBSERVATION MODES
 const OBS_MODES = {
     deep_sky: {
@@ -65,44 +99,188 @@ const OBS_MODES = {
     }
 };
 
+// ============================================
+// CORE FUNCTIONS
 function switchObsMode(mode) {
     localStorage.setItem('dwarf_obs_mode', mode);
     const searchBox = document.querySelector('.search-box');
     const tags = document.querySelector('.tags');
     const sheet = document.getElementById('sheet');
-    const exportSection = document.getElementById('exportSection');
+    const globalExportSection = document.getElementById('globalExportSection');
     const tipsSection = document.getElementById('tipsSection');
     const tonightPanel = document.getElementById('tonightPanel');
     const panelMW = document.getElementById('panel_milky_way');
     const panelST = document.getElementById('panel_star_trails');
     const panelTL = document.getElementById('panel_time_lapse');
+    const starTrailsTargetSelector = document.getElementById('starTrailsTargetSelector');
     
     if (mode === 'deep_sky') {
         if (searchBox) searchBox.style.display = 'flex';
         if (tags) tags.style.display = 'flex';
         if (sheet) sheet.style.display = '';
         if (tonightPanel) tonightPanel.style.display = '';
+        if (globalExportSection) globalExportSection.style.display = 'block';
         if (panelMW) panelMW.style.display = 'none';
         if (panelST) panelST.style.display = 'none';
         if (panelTL) panelTL.style.display = 'none';
+        if (starTrailsTargetSelector) starTrailsTargetSelector.style.display = 'none';
+        const objIdElem = document.getElementById('objId');
+        if (objIdElem && objIdElem.innerText === 'Star Trails Target') {
+            document.getElementById('sheet').style.display = 'none';
+            document.getElementById('tipsSection').style.display = 'none';
+        }
     } else {
         if (searchBox) searchBox.style.display = 'none';
         if (tags) tags.style.display = 'none';
         if (sheet) sheet.style.display = 'none';
-        if (exportSection) exportSection.style.display = 'none';
         if (tipsSection) tipsSection.style.display = 'none';
         if (tonightPanel) tonightPanel.style.display = 'none';
+        if (globalExportSection) globalExportSection.style.display = 'block';
         if (panelMW) panelMW.style.display = mode === 'milky_way' ? '' : 'none';
         if (panelST) panelST.style.display = mode === 'star_trails' ? '' : 'none';
         if (panelTL) panelTL.style.display = mode === 'time_lapse' ? '' : 'none';
+        if (starTrailsTargetSelector) starTrailsTargetSelector.style.display = mode === 'star_trails' ? 'block' : 'none';
+        
         if (mode === 'milky_way') { calcMW(); restoreMWChecklist(); updateMWAlerts(); }
-        if (mode === 'star_trails') { calcST(); restoreSTChecklist(); updateSTAlerts(); }
+        if (mode === 'star_trails') { 
+            calcST(); 
+            restoreSTChecklist(); 
+            updateSTAlerts();
+            initStarTrailsUI();
+            if (currentStarTrailsTarget) showStarTrailsTarget(currentStarTrailsTarget);
+        }
         if (mode === 'time_lapse') { calcTL(); restoreTLChecklist(); updateTLAlerts(); }
     }
     updateModeBanner(mode);
     if (window._skyQuality) updateSkyQualityBanner();
 }
 
+function initStarTrailsUI() {
+    let selector = document.getElementById('starTrailsTargetSelector');
+    if (!selector) {
+        const panelST = document.getElementById('panel_star_trails');
+        if (panelST) {
+            selector = document.createElement('div');
+            selector.id = 'starTrailsTargetSelector';
+            selector.style.cssText = 'margin-bottom: 20px; padding: 15px; background: var(--bg-panel); border-radius: 12px; border: 1px solid var(--border);';
+            selector.innerHTML = `
+                <label style="display: block; margin-bottom: 8px; font-weight: 700; color: var(--accent);">🎯 Star Trails Target:</label>
+                <select id="starTrailsTargetSelect" style="width: 100%; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: var(--font-mono);">
+                    ${STAR_TRAILS_TARGETS.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}
+                </select>
+                <div id="starTrailsTargetNotes" style="margin-top: 12px; padding: 10px; background: rgba(183,148,244,0.1); border-radius: 6px; font-size: 0.85rem; color: var(--text-sub);"></div>
+            `;
+            panelST.insertBefore(selector, panelST.firstChild);
+            
+            const select = document.getElementById('starTrailsTargetSelect');
+            if (select) {
+                select.addEventListener('change', (e) => {
+                    const target = STAR_TRAILS_TARGETS.find(t => t.id === e.target.value);
+                    if (target) {
+                        currentStarTrailsTarget = target;
+                        showStarTrailsTarget(target);
+                    }
+                });
+            }
+        }
+    }
+}
+
+function showStarTrailsTarget(target) {
+    if (!target) return;
+    
+    const notesDiv = document.getElementById('starTrailsTargetNotes');
+    if (notesDiv) notesDiv.innerHTML = `<strong>ℹ️ Target Notes:</strong><br>${target.notes}`;
+    
+    const objIdElem = document.getElementById('objId');
+    const objNameElem = document.getElementById('objName');
+    const objTypeElem = document.getElementById('objType');
+    const objAdviceElem = document.getElementById('objAdvice');
+    const objDiffElem = document.getElementById('objDiff');
+    const typeIconElem = document.getElementById('typeIcon');
+    const astrobinLink = document.getElementById('astrobinLink');
+    const objThumb = document.getElementById('objThumb');
+    const stellariumLink = document.getElementById('stellariumLink');
+    const adaptedExpElem = document.getElementById('adaptedExp');
+    const adaptedGainElem = document.getElementById('adaptedGain');
+    const adaptedExpNoteElem = document.getElementById('adaptedExpNote');
+    const adaptedGainNoteElem = document.getElementById('adaptedGainNote');
+    const valFiltroElem = document.getElementById('valFiltro');
+    const noteFiltroElem = document.getElementById('noteFiltro');
+    const baseExpElem = document.getElementById('baseExp');
+    const baseGainElem = document.getElementById('baseGain');
+    const altCanvas = document.getElementById('altCanvas');
+    const altStats = document.getElementById('altStats');
+    const lunarRow = document.getElementById('lunarRow');
+    const sessionRow = document.getElementById('sessionRow');
+    const corrBanner = document.getElementById('corrBanner');
+    const qsSummary = document.getElementById('qsSummary');
+    const qsExp = document.getElementById('qsExp');
+    const qsGain = document.getElementById('qsGain');
+    const qsFilter = document.getElementById('qsFilter');
+    const qsDuration = document.getElementById('qsDuration');
+    const qsFrames = document.getElementById('qsFrames');
+    const qsQuality = document.getElementById('qsQuality');
+    const cardinalDirElem = document.getElementById('cardinalDir');
+    
+    if (objIdElem) objIdElem.innerHTML = `Star Trails Target <span id="typeIcon" style="font-size:1.2rem;">💫</span>`;
+    if (objNameElem) objNameElem.innerText = target.name;
+    if (objTypeElem) objTypeElem.innerText = "Star Trails";
+    if (objAdviceElem) objAdviceElem.innerText = target.notes;
+    if (objDiffElem) {
+        objDiffElem.innerText = "EASY";
+        objDiffElem.className = "badge easy";
+    }
+    if (typeIconElem) typeIconElem.innerText = "💫";
+    if (astrobinLink) astrobinLink.href = "#";
+    if (objThumb) objThumb.style.display = 'none';
+    if (stellariumLink) stellariumLink.href = "#";
+    
+    const mode = 'star_trails';
+    const defaultExp = OBS_MODES.star_trails.defaults.exp;
+    const defaultGain = OBS_MODES.star_trails.defaults.gain;
+    const defaultFilter = OBS_MODES.star_trails.defaults.filter;
+    
+    if (adaptedExpElem) adaptedExpElem.innerText = defaultExp + 's';
+    if (adaptedGainElem) adaptedGainElem.innerText = defaultGain;
+    if (adaptedExpNoteElem) adaptedExpNoteElem.innerText = 'Star Trails standard exposure';
+    if (adaptedGainNoteElem) adaptedGainNoteElem.innerText = 'Star Trails standard gain';
+    if (valFiltroElem) valFiltroElem.innerText = defaultFilter;
+    if (noteFiltroElem) noteFiltroElem.innerText = 'No filter needed for star trails';
+    if (baseExpElem) baseExpElem.innerText = defaultExp + 's';
+    if (baseGainElem) baseGainElem.innerText = defaultGain;
+    
+    if (altCanvas) altCanvas.style.display = 'none';
+    if (altStats) altStats.style.display = 'none';
+    if (lunarRow) lunarRow.style.display = 'none';
+    if (sessionRow) sessionRow.style.display = 'none';
+    if (corrBanner) corrBanner.style.display = 'none';
+    if (cardinalDirElem) cardinalDirElem.style.display = 'none';
+    
+    const sessionMin = parseInt(document.getElementById('availableMinutes')?.value) || 120;
+    const expSec = defaultExp;
+    const frameCount = Math.round((sessionMin * 60) / expSec);
+    const storageGB = (frameCount * 25 / 1024).toFixed(2);
+    const bat = sessionMin > 180 ? "⚠️ Battery low" : "✅ Battery OK";
+    
+    if (qsSummary) qsSummary.innerHTML = `<strong>Star Trails - ${target.name}:</strong> Total <strong>${sessionMin} min</strong>. Frames: <strong>${frameCount}</strong>. ${bat}. Memory: ~${storageGB} GB.<br>${target.notes}`;
+    if (qsExp) qsExp.innerText = expSec + 's';
+    if (qsGain) qsGain.innerText = defaultGain;
+    if (qsFilter) qsFilter.innerText = defaultFilter;
+    if (qsDuration) qsDuration.innerText = sessionMin + ' min';
+    if (qsFrames) qsFrames.innerText = frameCount;
+    if (qsQuality) qsQuality.innerText = "🟢 Recommended";
+    
+    window._currentStarTrailsTarget = target;
+    
+    const sheet = document.getElementById('sheet');
+    if (sheet) sheet.style.display = 'block';
+    const tipsSection = document.getElementById('tipsSection');
+    if (tipsSection) tipsSection.style.display = 'block';
+}
+
+// ============================================
+// CALCULATORS FOR MODES
 function calcMW() {
     const exp = parseInt(document.getElementById('mw_exp').value) || 20;
     const frames = parseInt(document.getElementById('mw_frames').value) || 30;
@@ -127,6 +305,26 @@ function calcST() {
     document.getElementById('st_r_storage').textContent = storageGB + ' GB';
     document.getElementById('st_r_battery').textContent = battPct + '% est.';
     updateSTAlerts();
+    
+    if (window._currentStarTrailsTarget) updateStarTrailsPlanner();
+}
+
+function updateStarTrailsPlanner() {
+    const sessionMin = parseInt(document.getElementById('availableMinutes')?.value) || 120;
+    const expSec = parseInt(document.getElementById('st_exp')?.value) || 25;
+    const frameCount = Math.round((sessionMin * 60) / expSec);
+    const storageGB = (frameCount * 25 / 1024).toFixed(2);
+    const bat = sessionMin > 180 ? "⚠️ Battery low" : "✅ Battery OK";
+    const target = window._currentStarTrailsTarget;
+    
+    const qsSummary = document.getElementById('qsSummary');
+    if (qsSummary && target) {
+        qsSummary.innerHTML = `<strong>Star Trails - ${target.name}:</strong> Total <strong>${sessionMin} min</strong>. Frames: <strong>${frameCount}</strong>. ${bat}. Memory: ~${storageGB} GB.<br>${target.notes}`;
+    }
+    const qsDuration = document.getElementById('qsDuration');
+    if (qsDuration) qsDuration.innerText = sessionMin + ' min';
+    const qsFrames = document.getElementById('qsFrames');
+    if (qsFrames) qsFrames.innerText = frameCount;
 }
 
 function calcTL() {
@@ -144,12 +342,8 @@ function calcTL() {
     updateTLAlerts();
 }
 
-function formatDur(sec) {
-    if (sec < 60) return sec + 's';
-    if (sec < 3600) return Math.round(sec / 60) + ' min';
-    return (sec / 3600).toFixed(1) + 'h';
-}
-
+// ============================================
+// ALERTS BANNERS
 function _alertBanner(alerts) {
     if (!alerts.length) return '';
     return alerts.map(a => `<div style="background:${a.bg};border:1px solid ${a.col};border-radius:8px;padding:10px 14px;font-size:0.83rem;color:${a.col};font-weight:600;margin-bottom:8px;">${a.icon} ${a.msg}</div>`).join('');
@@ -191,6 +385,8 @@ function updateTLAlerts() {
     el.innerHTML = _alertBanner(alerts);
 }
 
+// ============================================
+// CHECKLIST MANAGEMENT
 function saveMWChecklist() {
     const s = [1,2,3,4,5,6].map(i => document.getElementById('mw_chk'+i)?.checked ? '1' : '0').join('');
     try { localStorage.setItem('dwarf_mw_checklist', s); } catch(e) {}
@@ -260,6 +456,8 @@ function resetTLChecklist() {
     try { localStorage.removeItem('dwarf_tl_checklist'); } catch(e) {}
 }
 
+// ============================================
+// MODE BANNER
 function updateModeBanner(mode) {
     const data = OBS_MODES[mode];
     let banner = document.getElementById('modeBanner');
@@ -281,6 +479,8 @@ function updateModeBanner(mode) {
     banner.innerHTML = `<div class="tech-header"><span>${data.icon} Mode: ${data.name}</span><span class="badge ${mode === 'deep_sky' ? 'intermediate' : 'easy'}" style="margin-left:auto">${data.difficulty}</span></div><div style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 10px;">${data.tips.map(t => `• ${t}`).join('<br>')}</div>${warnings.length > 0 ? `<div style="color: var(--danger); font-weight: 700; font-size: 0.8rem; margin-top: 10px;">${warnings.join('<br>')}</div>` : `<div style="color: var(--success); font-weight: 700; font-size: 0.8rem; margin-top: 10px;">✅ Ideal conditions detected</div>`}`;
 }
 
+// ============================================
+// LOCATION AND COORDINATE CONVERSIONS
 let userLat = 43.4;
 let userLon = 13.55;
 
@@ -365,6 +565,18 @@ function getAltCurve(ra_h, dec, date) {
     return pts;
 }
 
+function calculateCardinalDirectionAtTime(obj, date, targetHour) {
+    if (!obj || obj.ra_h === undefined || obj.dec === undefined) return 'Unknown';
+    const pts = getAltCurve(obj.ra_h, obj.dec, date);
+    const targetPoint = pts.find(p => Math.abs(p.h - targetHour) < 0.25);
+    if (targetPoint && targetPoint.az !== undefined) {
+        return getCardinalDirectionFromAzimuth(targetPoint.az);
+    }
+    return 'Calculating...';
+}
+
+// ============================================
+// LUNAR PHASE FUNCTIONS
 function lunaPhase(date) {
     const jd = toJD(date) + 0.5;
     const T = (jd - 2451545) / 36525;
@@ -385,14 +597,8 @@ function lunaImpact(pct, filter, type) {
     return {bg: 'rgba(252,129,129,0.15)', col: '#fc8181', bdr: '#fc8181', txt: isNeb ? 'Moon: high impact — postpone or use Dual-band' : 'Moon: high — galaxies still observable'};
 }
 
-function sessCalc(framesStr, expStr) {
-    const p = framesStr.split('/');
-    const fMin = parseInt(p[0]) || 40, fOk = parseInt(p[1]) || 60;
-    const exp = parseInt(expStr) || 30;
-    const fmt = s => s >= 3600 ? (s / 3600).toFixed(1) + 'h' : Math.round(s / 60) + 'min';
-    return {min: fmt(fMin * exp), ok: fmt(fOk * exp), minN: fMin + ' frames × ' + exp + 's', okN: fOk + ' frames × ' + exp + 's', pct: Math.min(100, Math.round(fOk * exp / 18000 * 100))};
-}
-
+// ============================================
+// ALTITUDE GRAPH DRAWING
 function drawAlt(pts, drawDate) {
     const canvas = document.getElementById('altCanvas');
     if (!canvas) return;
@@ -607,13 +813,1028 @@ function drawAlt(pts, drawDate) {
     ctx.fillText('🌙', PAD.l + cw - 4, PAD.t + 11);
 }
 
+// ============================================
+// SESSION CALCULATIONS
+function sessCalc(framesStr, expStr) {
+    const p = framesStr.split('/');
+    const fMin = parseInt(p[0]) || 40, fOk = parseInt(p[1]) || 60;
+    const exp = parseInt(expStr) || 30;
+    const fmt = s => s >= 3600 ? (s / 3600).toFixed(1) + 'h' : Math.round(s / 60) + 'min';
+    return {min: fmt(fMin * exp), ok: fmt(fOk * exp), minN: fMin + ' frames × ' + exp + 's', okN: fOk + ' frames × ' + exp + 's', pct: Math.min(100, Math.round(fOk * exp / 18000 * 100))};
+}
+
+// ============================================
+// BORTLE ESTIMATION AND GPS
+const MAJOR_CITIES = [[40.71,-74.01],[34.05,-118.24],[41.88,-87.63],[51.51,-0.13],[48.86,2.35],[52.52,13.40],[35.68,139.69],[31.23,121.47],[39.91,116.39],[28.61,77.21],[19.08,72.88],[23.13,-46.63],[19.43,-99.13],[37.77,-122.42],[41.90,12.50],[45.46,9.19],[40.85,14.27],[55.75,37.62],[41.01,28.97],[30.06,31.25],[1.35,103.82],[22.32,114.17],[37.57,126.98],[25.20,55.27],[24.69,46.72],[-33.87,151.21],[-23.55,-46.63],[6.45,3.40],[33.34,44.40],[43.70,-79.42]];
+const MEDIUM_CITIES = [[44.49,11.34],[43.77,11.25],[45.44,12.33],[38.11,13.36],[40.42,-3.70],[41.39,2.15],[38.72,-9.14],[37.98,23.73],[47.37,8.54],[50.85,4.35],[52.37,4.90],[59.91,10.75],[59.33,18.07],[60.17,24.94],[50.08,14.44],[47.50,19.04],[33.75,-84.39],[29.76,-95.37],[32.78,-96.80],[47.61,-122.33],[45.52,-122.68],[39.74,-104.98],[42.36,-71.06],[25.77,-80.19],[29.95,-90.07]];
+
+function distKm(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function estimateBortleInternal(lat, lon) {
+    let minMajor = 99999, minMedium = 99999;
+    MAJOR_CITIES.forEach(([clat, clon]) => {
+        const d = distKm(lat, lon, clat, clon);
+        if (d < minMajor) minMajor = d;
+    });
+    MEDIUM_CITIES.forEach(([clat, clon]) => {
+        const d = distKm(lat, lon, clat, clon);
+        if (d < minMedium) minMedium = d;
+    });
+    if (minMajor < 15) return 9;
+    if (minMajor < 30) return 8;
+    if (minMajor < 60) return 7;
+    if (minMedium < 20) return 7;
+    if (minMajor < 100) return 6;
+    if (minMedium < 50) return 6;
+    if (minMajor < 200) return 5;
+    if (minMedium < 100) return 5;
+    if (minMajor < 400) return 4;
+    return 3;
+}
+
+function estimateBortleFromCoords(lat, lon) {
+    const bortle = estimateBortleInternal(lat, lon);
+    const sel = document.getElementById('bortleSelect');
+    const opts = [1, 3, 5, 7, 9];
+    const closest = opts.reduce((a, b) => Math.abs(b - bortle) < Math.abs(a - bortle) ? b : a);
+    sel.value = closest;
+    try { localStorage.setItem('dwarf_bortle', closest); } catch(e) {}
+    showBortleNotice(bortle, closest, true);
+    if (window._lastObj) show(window._lastObj);
+}
+
+function showBortleNotice(bortle, selected, internal) {
+    let notice = document.getElementById('bortleNotice');
+    if (!notice) return;
+    notice.style.display = 'block';
+    if (internal) {
+        notice.style.cssText = 'font-size:0.75rem;color:#f6ad55;margin-top:4px;padding:4px 8px;background:rgba(246,173,85,0.1);border-radius:4px;border:1px solid rgba(246,173,85,0.3);';
+        notice.innerHTML = '📍 Bortle estimated from coordinates (internal): <strong>' + selected + '</strong> — adjust manually if needed';
+    } else {
+        notice.style.cssText = 'font-size:0.75rem;color:#68d391;margin-top:4px;padding:4px 8px;background:rgba(104,211,145,0.1);border-radius:4px;border:1px solid rgba(104,211,145,0.3);';
+        notice.innerHTML = '🌍 Light pollution detected: Bortle <strong>' + Math.round(bortle) + '</strong> — auto-set to <strong>' + selected + '</strong>';
+    }
+    setTimeout(() => { if (notice) notice.style.opacity = '0.3'; }, 6000);
+}
+
+function detectGPS() {
+    if (!navigator.geolocation) {
+        alert('Geolocation not supported by your browser.');
+        return;
+    }
+    const btn = event.target;
+    btn.innerText = '⏳';
+    btn.disabled = true;
+    navigator.geolocation.getCurrentPosition(function(pos) {
+        const lat = Math.round(pos.coords.latitude * 100) / 100;
+        const lon = Math.round(pos.coords.longitude * 100) / 100;
+        document.getElementById('latInput').value = lat;
+        document.getElementById('lonInput').value = lon;
+        document.getElementById('presetLoc').value = 'custom';
+        userLat = lat;
+        userLon = lon;
+        try {
+            localStorage.setItem('dwarf_lat', lat);
+            localStorage.setItem('dwarf_lon', lon);
+        } catch(e) {}
+        estimateBortleFromCoords(lat, lon);
+        btn.innerText = '📍 GPS';
+        btn.disabled = false;
+        if (window._lastObj) show(window._lastObj);
+    }, function(err) {
+        const msg = err.code === 1 ? 'Location permission denied.\nPlease allow location access in your browser settings, or enter coordinates manually.' : err.code === 2 ? 'Location unavailable.\nPlease enter coordinates manually.' : 'Location request timed out.\nPlease enter coordinates manually.';
+        alert('📍 GPS Error\n\n' + msg);
+        btn.innerText = '📍 GPS';
+        btn.disabled = false;
+    }, { timeout: 15000, enableHighAccuracy: true });
+}
+
+function applyLocation() {
+    try {
+        localStorage.setItem('dwarf_lat', document.getElementById('latInput').value);
+        localStorage.setItem('dwarf_lon', document.getElementById('lonInput').value);
+        localStorage.setItem('dwarf_bortle', document.getElementById('bortleSelect').value);
+    } catch(e) {}
+    const preset = document.getElementById('presetLoc').value;
+    if (preset !== 'custom') {
+        const [lat, lon] = preset.split(',').map(Number);
+        userLat = lat;
+        userLon = lon;
+    } else {
+        const lat = parseFloat(document.getElementById('latInput').value);
+        const lon = parseFloat(document.getElementById('lonInput').value);
+        if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+            userLat = lat;
+            userLon = lon;
+        } else {
+            alert('Invalid coordinates. Lat: -90/90, Lon: -180/180');
+            return;
+        }
+    }
+    const currentId = document.getElementById('objId').innerText;
+    if (currentId && document.getElementById('sheet').style.display === 'block' && currentId !== 'Star Trails Target') {
+        const obj = dwarfDB.find(x => x.id === currentId);
+        if (obj) show(obj);
+    }
+    tonightPage = 1;
+    buildTonight();
+}
+
+// ============================================
+// ADAPTIVE EXPOSURE AND GAIN CORRECTIONS
+function getRecommendedFilter(obj) {
+    const type = (obj.type || '').toLowerCase();
+    if (type.includes('galaxy')) return 'Astro / IR-CUT';
+    const advice = (obj.advice || '').toLowerCase();
+    const name = (obj.name || '').toLowerCase();
+    if (type.includes('planetary')) return 'Dual-band';
+    if (type.includes('remnant') || type.includes('supernova')) return 'Dual-band';
+    if (type.includes('globular') || type.includes('open') || type.includes('star cloud') || type.includes('asterism') || type.includes('double')) return 'Astro / IR-CUT';
+    if (type.includes('nebula') || type.includes('nebul')) {
+        const isReflection = /reflection|reflect|blue|dust|scattered/i.test(advice + ' ' + name);
+        if (isReflection) return 'Astro / IR-CUT';
+        return 'Dual-band';
+    }
+    return obj.settings.filter;
+}
+
+function isFaint(type, advice) {
+    const t = (type + ' ' + (advice || '')).toLowerCase();
+    return /low surface|faint|diffuse|bassa|debole|tenue/.test(t);
+}
+
+function getLunaCorrection(lunaPct, filter) {
+    const isDual = filter === 'Dual-band';
+    let gainCorr, espCorr;
+    if (lunaPct <= 20) { gainCorr = 0; espCorr = 0; }
+    else if (lunaPct <= 40) { gainCorr = -2; espCorr = -8; }
+    else if (lunaPct <= 60) { gainCorr = -4; espCorr = -15; }
+    else if (lunaPct <= 80) { gainCorr = -6; espCorr = -20; }
+    else { gainCorr = -8; espCorr = -25; }
+    if (isDual) {
+        gainCorr = Math.round(gainCorr / 2);
+        espCorr = Math.round(espCorr / 2);
+    }
+    return { gainCorr, espCorr };
+}
+
+function getBortleCorrection(bortle) {
+    if (bortle <= 2) return { gainCorr: 0, espCorr: 0 };
+    else if (bortle <= 4) return { gainCorr: -2, espCorr: -5 };
+    else if (bortle <= 6) return { gainCorr: -5, espCorr: -10 };
+    else if (bortle <= 8) return { gainCorr: -8, espCorr: -15 };
+    else return { gainCorr: -10, espCorr: -20 };
+}
+
+function applyCorrections(baseGain, baseExp, lunaPct, filter, bortle, type, advice) {
+    const lc = getLunaCorrection(lunaPct, filter);
+    const bc = getBortleCorrection(bortle);
+    let gainVal;
+    if (typeof baseGain === 'string' && baseGain.includes('-')) {
+        const parts = baseGain.split('-').map(Number);
+        gainVal = Math.round((parts[0] + parts[1]) / 2);
+    } else {
+        gainVal = parseInt(baseGain) || 65;
+    }
+    const expVal = parseInt(baseExp) || 30;
+    const faintFactor = isFaint(type, advice) ? 0.4 : 1.0;
+    const gainTot = Math.round((lc.gainCorr + bc.gainCorr) * faintFactor);
+    const expTot = Math.round((lc.espCorr + bc.espCorr) * faintFactor);
+    let adjGain = Math.max(0, Math.min(150, gainVal + gainTot));
+    let adjExp = Math.max(1, Math.min(60, expVal + expTot));
+    
+    // HARD FLOOR ENFORCEMENT
+    const floorType = getObjectTypeForFloor(type, advice);
+    if (floorType && MINIMUM_FLOORS[floorType]) {
+        const minFloor = MINIMUM_FLOORS[floorType];
+        if (adjExp < minFloor) adjExp = minFloor;
+    }
+    
+    adjGain = snapToAllowed(adjGain, ALLOWED_GAIN);
+    adjExp = snapToAllowed(adjExp, ALLOWED_EXPOSURE);
+    return {
+        gain: adjGain,
+        exp: adjExp,
+        gainBase: gainVal,
+        expBase: expVal,
+        gainDelta: gainTot,
+        expDelta: expTot,
+        faint: isFaint(type, advice)
+    };
+}
+
+function buildBanner(adj, lunaPct, bortle, filter, objType) {
+    const lc = getLunaCorrection(lunaPct, filter);
+    const bc = getBortleCorrection(bortle);
+    const isDual = filter === 'Dual-band';
+    const isOptimal = adj.gainDelta === 0 && adj.expDelta === 0;
+    const lunaDesc = lunaPct <= 20 ? 'No moon/minimal' : lunaPct <= 40 ? 'Slight crescent moon' : lunaPct <= 60 ? 'Moderate moon' : lunaPct <= 80 ? 'Significant moon' : 'Full moon';
+    const bortleDesc = bortle <= 2 ? 'Perfect dark sky' : bortle <= 4 ? 'Rural sky' : bortle <= 6 ? 'Suburban sky' : bortle <= 8 ? 'Urban sky' : 'City center';
+    if (isOptimal) {
+        return { color: '#68d391', bg: 'rgba(104,211,145,0.08)', border: '#68d391', html: `<div style="font-size:0.85rem;font-weight:700;margin-bottom:6px">✓ Optimal conditions — no corrections applied</div><div style="font-size:0.78rem;opacity:0.85">Dark sky (Bortle ${bortle}) + Moon ${lunaPct}% = base settings are ideal for this object.</div>` };
+    }
+    return { color: '#f6ad55', bg: 'rgba(246,173,85,0.08)', border: '#f6ad55', html: `<div style="font-size:0.85rem;font-weight:700;margin-bottom:8px">⚙ Values adapted to tonight's conditions</div><div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px"><div><span style="opacity:0.7;font-size:0.75rem">🌙 MOON</span><br><span style="font-size:0.8rem">${lunaDesc} (${lunaPct}%)</span><br><span style="font-size:0.75rem;opacity:0.7">Gain ${lc.gainCorr > 0 ? '+' : ''}${lc.gainCorr}${isDual ? ' (÷2 Dual-band)' : ''} · Exp ${lc.espCorr > 0 ? '+' : ''}${lc.espCorr}s${isDual ? ' (÷2)' : ''}</span></div><div><span style="opacity:0.7;font-size:0.75rem">🌆 BORTLE ${bortle}</span><br><span style="font-size:0.8rem">${bortleDesc}</span><br><span style="font-size:0.75rem;opacity:0.7">Gain ${bc.gainCorr > 0 ? '+' : ''}${bc.gainCorr} · Exp ${bc.espCorr > 0 ? '+' : ''}${bc.espCorr}s</span></div>${adj.faint ? `<div><span style="opacity:0.7;font-size:0.75rem">🔭 FAINT OBJECT</span><br><span style="font-size:0.8rem">Low surface brightness</span><br><span style="font-size:0.75rem;opacity:0.7">Corrections reduced 40%</span></div>` : ''}</div><div style="font-size:0.78rem;border-top:1px solid rgba(246,173,85,0.2);padding-top:6px;opacity:0.85">💡 Values shown are an <em>adaptive starting point</em> snapped to DWARF hardware support. Always experiment and note your best results.</div>` };
+}
+
+// ============================================
+// SESSION PLANNER
+let plannerMode = 'auto';
+
+function setPlannerMode(mode) {
+    plannerMode = mode;
+    const btnAuto = document.getElementById('modeAuto');
+    const btnCon = document.getElementById('modeConstrained');
+    const conInput = document.getElementById('constrainedInput');
+    if (mode === 'auto') {
+        btnAuto.style.background = 'var(--accent)';
+        btnAuto.style.color = '#000';
+        btnAuto.style.borderColor = 'var(--accent)';
+        btnCon.style.background = 'transparent';
+        btnCon.style.color = 'var(--text-sub)';
+        btnCon.style.borderColor = 'var(--border)';
+        if (conInput) conInput.style.display = 'none';
+    } else {
+        btnCon.style.background = 'var(--accent)';
+        btnCon.style.color = '#000';
+        btnCon.style.borderColor = 'var(--accent)';
+        btnAuto.style.background = 'transparent';
+        btnAuto.style.color = 'var(--text-sub)';
+        btnAuto.style.borderColor = 'var(--border)';
+        if (conInput) conInput.style.display = 'block';
+    }
+    if (window._lastObj) updatePlanner(window._lastObj);
+}
+
+function recalcConstrained() {
+    if (window._lastObj) updatePlanner(window._lastObj);
+}
+
+function calcOptimalMinutes(obj, adjExp) {
+    const mag = parseFloat(obj.mag) || 8;
+    const isFaintObj = isFaint(obj.type, obj.advice);
+    const type = obj.type.toLowerCase();
+    let baseMin;
+    if (type.includes('globular') || type.includes('open')) baseMin = 15;
+    else if (type.includes('galaxy')) baseMin = isFaintObj ? 90 : 45;
+    else if (type.includes('planetary')) baseMin = 40;
+    else if (type.includes('remnant')) baseMin = 75;
+    else baseMin = 60;
+    const magMult = mag < 6 ? 0.5 : mag < 8 ? 0.8 : mag < 10 ? 1.2 : 1.6;
+    const bortle = parseInt(document.getElementById('bortleSelect').value) || 5;
+    const bortMult = bortle <= 2 ? 0.7 : bortle <= 4 ? 0.85 : bortle <= 6 ? 1.0 : bortle <= 8 ? 1.3 : 1.6;
+    return Math.round(baseMin * magMult * bortMult);
+}
+
+function qualityLabel(frames, optimal) {
+    const ratio = frames / optimal;
+    if (ratio >= 1.5) return { icon: '🌟', label: 'Excellent' };
+    if (ratio >= 0.9) return { icon: '✅', label: 'Good' };
+    if (ratio >= 0.6) return { icon: '🔶', label: 'Decent' };
+    if (ratio >= 0.3) return { icon: '⚠️', label: 'Minimal' };
+    return { icon: '❌', label: 'Too short' };
+}
+
+function updatePlanner(obj) {
+    const mode = document.getElementById('obsMode').value || 'deep_sky';
+    const data = OBS_MODES[mode];
+    const bortle = parseInt(document.getElementById('bortleSelect').value) || 5;
+    let expSec, gain, filter, sessionMin, frameCount, summary, expNote = 'base value';
+    if (mode === 'deep_sky') {
+        const adjData = applyCorrections(obj.settings.gain, obj.settings.exp, window._lastLuna || 0, obj._effectiveFilter || obj.settings.filter, bortle, obj.type, obj.advice);
+        expSec = adjData.exp;
+        gain = adjData.gain;
+        filter = obj._effectiveFilter || obj.settings.filter;
+        expNote = adjData.expBase !== adjData.exp ? 'adapted from ' + adjData.expBase + 's' : 'base value';
+        const optMin = calcOptimalMinutes(obj, expSec);
+        if (plannerMode === 'auto') {
+            sessionMin = optMin;
+        } else {
+            sessionMin = parseInt(document.getElementById('availableMinutes').value) || 30;
+        }
+        frameCount = Math.round((sessionMin * 60) / expSec);
+        const q = qualityLabel(frameCount, Math.round((optMin * 60) / expSec));
+        summary = plannerMode === 'auto' ? `Tonight for <strong>${obj.id}</strong>: shoot <strong>${frameCount} frames</strong> × <strong>${expSec}s</strong> = <strong>${sessionMin} min</strong> session. ${q.icon} Expected quality: ${q.label}.` : `In your <strong>${sessionMin} min</strong> window: <strong>${frameCount} frames</strong> × <strong>${expSec}s</strong>. ${q.icon} Quality: ${q.label}. Optimal would be ${optMin} min.`;
+        document.getElementById('qsQuality').innerText = q.icon + ' ' + q.label;
+    } else if (mode === 'milky_way') {
+        expSec = 10;
+        gain = 80;
+        filter = "None";
+        sessionMin = 15;
+        frameCount = Math.round((sessionMin * 60) / expSec);
+        summary = `<strong>Milky Way:</strong> Shoot <strong>${frameCount} frames</strong> of 10s. Stacking will reveal the Galactic Core. Best with Bortle ≤ 4.`;
+        document.getElementById('qsQuality').innerText = "🟢 Recommended";
+    } else if (mode === 'star_trails') {
+        expSec = 30;
+        gain = 60;
+        filter = "None";
+        sessionMin = parseInt(document.getElementById('availableMinutes').value) || 120;
+        frameCount = Math.round((sessionMin * 60) / expSec);
+        const bat = sessionMin > 180 ? "⚠️ Battery low" : "✅ Battery OK";
+        summary = `<strong>Star Trails:</strong> Total <strong>${sessionMin} min</strong>. Frames: <strong>${frameCount}</strong>. ${bat}. Memory: ~${(frameCount * 15 / 1024).toFixed(1)} GB.`;
+        document.getElementById('qsQuality').innerText = "🟢 Recommended";
+    } else if (mode === 'time_lapse') {
+        expSec = 1;
+        gain = 40;
+        filter = "None";
+        const videoSec = 20;
+        const fps = 30;
+        frameCount = videoSec * fps;
+        const interval = 5;
+        sessionMin = Math.round((frameCount * interval) / 60);
+        summary = `<strong>Time-Lapse:</strong> To get <strong>${videoSec}s</strong> of video at ${fps}fps, you need <strong>${frameCount} frames</strong>. Total capture time: <strong>~${sessionMin} min</strong>.`;
+        document.getElementById('qsQuality').innerText = "🟡 Medium";
+    }
+    document.getElementById('qsExp').innerText = expSec + 's';
+    document.getElementById('qsExpNote').innerText = expNote;
+    document.getElementById('qsGain').innerText = gain;
+    document.getElementById('qsFilter').innerText = filter;
+    document.getElementById('qsDuration').innerText = sessionMin + ' min';
+    document.getElementById('qsFrames').innerText = frameCount;
+    document.getElementById('qsSummary').innerHTML = summary;
+}
+
+function toggleHDRWorkflow() {
+    const toggle = document.getElementById('hdrToggle');
+    const hdrBox = document.getElementById('hdrWorkflowBox');
+    if (toggle && hdrBox) {
+        if (toggle.checked) hdrBox.classList.add('visible');
+        else hdrBox.classList.remove('visible');
+    }
+}
+
+// ============================================
+// WEATHER AND SKY QUALITY
+async function loadWeather() {
+    const lat = parseFloat(document.getElementById('latInput').value) || userLat;
+    const lon = parseFloat(document.getElementById('lonInput').value) || userLon;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,cloud_cover,wind_speed_10m,weather_code&wind_speed_unit=kmh`;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 15000);
+    const wRow = document.getElementById('weatherRow');
+    const sqBanner = document.getElementById('skyQualityBanner');
+    if (wRow) {
+        wRow.style.display = 'block';
+        wRow.style.borderBottomLeftRadius = '0';
+        wRow.style.borderBottomRightRadius = '0';
+        document.getElementById('wSeeing').innerText = '⏳ Loading…';
+        document.getElementById('wAstroSeeingLabel').innerText = '…';
+        document.getElementById('wTransparency').innerText = '…';
+    }
+    try {
+        const r = await fetch(url, { signal: ctrl.signal });
+        clearTimeout(timer);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const d = await r.json();
+        const c = d.current;
+        const clouds = c.cloud_cover, humidity = c.relative_humidity_2m, temp = c.temperature_2m, wind = c.wind_speed_10m;
+        window._lastWind = wind;
+        window._lastClouds = clouds;
+        let seeing, seeingNote;
+        if (clouds > 80) { seeing = '❌ Poor'; seeingNote = 'Too cloudy'; }
+        else if (humidity > 85) { seeing = '⚠️ Fair'; seeingNote = 'High humidity'; }
+        else if (wind > 30) { seeing = '⚠️ Fair'; seeingNote = 'High wind'; }
+        else if (clouds < 20 && humidity < 60 && wind < 15) { seeing = '✅ Good'; seeingNote = 'Good conditions'; }
+        else { seeing = '🔶 Moderate'; seeingNote = 'Check later'; }
+        const sq = computeSkyQuality({ clouds, humidity, wind });
+        window._skyQuality = sq;
+        const cloudCol = clouds > 60 ? '#fc8181' : clouds > 30 ? '#f6ad55' : '#68d391';
+        const humCol = humidity > 80 ? '#fc8181' : humidity > 60 ? '#f6ad55' : '#68d391';
+        document.getElementById('wClouds').innerHTML = `<span style="color:${cloudCol}">${clouds}%</span>`;
+        document.getElementById('wHumidity').innerHTML = `<span style="color:${humCol}">${humidity}%</span>`;
+        document.getElementById('wTemp').innerText = temp + '°C';
+        document.getElementById('wWind').innerText = wind + ' km/h';
+        document.getElementById('wSeeing').innerText = seeing;
+        document.getElementById('wSeeingNote').innerText = seeingNote;
+        document.getElementById('wLocation').innerText = `Lat ${lat.toFixed(2)}° Lon ${lon.toFixed(2)}°`;
+        document.getElementById('wDesc').innerText = weatherDesc(c.weather_code);
+        const starsHTML = Array.from({ length: 5 }, (_, i) => `<span style="color:${i < sq.seeingScore ? sq.seeingColor : 'var(--border)'}">★</span>`).join('');
+        document.getElementById('wAstroSeeingLabel').innerHTML = `<span style="color:${sq.seeingColor}">${sq.seeingScore}/5 — ${sq.seeingLabel}</span>`;
+        document.getElementById('wAstroSeeingStars').innerHTML = starsHTML;
+        document.getElementById('wAstroSeeingNote').innerText = sq.seeingNote;
+        document.getElementById('wTransparency').innerHTML = `<span style="color:${sq.transparencyColor}">${sq.transparency}</span>`;
+        document.getElementById('wTransparencyNote').innerText = sq.transparencyNote;
+        const pill = document.getElementById('wImagingSuit');
+        pill.innerHTML = sq.suitLabel;
+        pill.style.cssText = `font-size:0.78rem;font-weight:700;padding:5px 14px;border-radius:20px;border:1px solid ${sq.suitBorder};color:${sq.suitCol};font-family:var(--font-mono);background:${sq.suitBg};`;
+        if (wRow) wRow.style.display = 'block';
+        updateSkyQualityBanner();
+    } catch (e) {
+        clearTimeout(timer);
+        const isTimeout = e.name === 'AbortError';
+        document.getElementById('wSeeing').innerText = isTimeout ? '⏱️ Timeout' : '❌ Offline';
+        document.getElementById('wSeeingNote').innerText = isTimeout ? 'Request exceeded 15s' : 'No connection';
+        document.getElementById('wAstroSeeingLabel').innerText = '—';
+        document.getElementById('wAstroSeeingStars').innerHTML = '';
+        document.getElementById('wAstroSeeingNote').innerText = '';
+        document.getElementById('wTransparency').innerText = '—';
+        document.getElementById('wTransparencyNote').innerText = '';
+        document.getElementById('wImagingSuit').innerText = '—';
+        ['wClouds', 'wHumidity', 'wTemp', 'wWind'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = '—'; });
+        document.getElementById('wLocation').innerText = isTimeout ? 'Request timed out' : 'Weather unavailable';
+        document.getElementById('wDesc').innerText = isTimeout ? 'Check connection speed' : 'Connect to load data';
+        if (wRow) wRow.style.display = 'block';
+        if (sqBanner) sqBanner.style.display = 'none';
+    }
+}
+
+function computeSkyQuality({ clouds, humidity, wind }) {
+    let seeingScore;
+    if (clouds > 80 || humidity > 90 || wind > 40) seeingScore = 1;
+    else if (clouds > 60 || humidity > 80 || wind > 30) seeingScore = 2;
+    else if (clouds > 40 || humidity > 70 || wind > 20) seeingScore = 3;
+    else if (clouds > 20 || humidity > 60 || wind > 12) seeingScore = 4;
+    else seeingScore = 5;
+    const seeingLabels = ['', 'Very Poor', 'Poor', 'Fair', 'Good', 'Excellent'];
+    const seeingColors = ['', '#fc8181', '#fc8181', '#f6ad55', '#68d391', '#68d391'];
+    const seeingNotes = ['', 'Heavy turbulence — stars bloated, trailing likely', 'Significant turbulence — stacking efficiency reduced', 'Moderate turbulence — acceptable for bright targets', 'Stable atmosphere — good for most DSO imaging', 'Exceptional stability — ideal for all targets'];
+    let transp, transpNote, transpColor;
+    if (clouds > 70 || humidity > 85) { transp = 'Low'; transpNote = 'Significant light scatter'; transpColor = '#fc8181'; }
+    else if (clouds > 40 || humidity > 70) { transp = 'Medium'; transpNote = 'Moderate atmospheric haze'; transpColor = '#f6ad55'; }
+    else if (clouds > 15 || humidity > 55) { transp = 'High'; transpNote = 'Good photon throughput'; transpColor = '#68d391'; }
+    else { transp = 'Superb'; transpNote = 'Near-perfect transparency'; transpColor = '#68d391'; }
+    let suitLabel, suitBg, suitCol, suitBorder;
+    const qualSum = seeingScore + (transp === 'Superb' ? 5 : transp === 'High' ? 4 : transp === 'Medium' ? 2 : 1);
+    if (qualSum >= 9) { suitLabel = '🟢 Excellent night'; suitBg = 'rgba(104,211,145,0.12)'; suitCol = '#68d391'; suitBorder = '#68d391'; }
+    else if (qualSum >= 6) { suitLabel = '🟡 Good night'; suitBg = 'rgba(246,173,85,0.12)'; suitCol = '#f6ad55'; suitBorder = '#f6ad55'; }
+    else if (qualSum >= 4) { suitLabel = '🟠 Marginal night'; suitBg = 'rgba(252,129,129,0.08)'; suitCol = '#f6ad55'; suitBorder = '#f6ad55'; }
+    else { suitLabel = '🔴 Poor night'; suitBg = 'rgba(252,129,129,0.12)'; suitCol = '#fc8181'; suitBorder = '#fc8181'; }
+    return { seeingScore, seeingLabel: seeingLabels[seeingScore], seeingColor: seeingColors[seeingScore], seeingNote: seeingNotes[seeingScore], transparency: transp, transparencyNote: transpNote, transparencyColor: transpColor, suitLabel, suitBg, suitCol, suitBorder };
+}
+
+function updateSkyQualityBanner() {
+    const banner = document.getElementById('skyQualityBanner');
+    if (!banner) return;
+    const sq = window._skyQuality;
+    const mode = (document.getElementById('obsMode') || {}).value || 'deep_sky';
+    const clouds = window._lastClouds || 0;
+    const messages = [];
+    if ((mode === 'deep_sky' || mode === 'milky_way') && sq && sq.seeingScore < 3) {
+        messages.push({ icon: '⚠️', col: '#f6ad55', bg: 'rgba(246,173,85,0.1)', bdr: 'rgba(246,173,85,0.35)', title: 'Atmospheric Seeing is Poor', body: `Seeing rated <strong>${sq.seeingScore}/5 — ${sq.seeingLabel}</strong>. Star stacking tracking efficiency might be reduced tonight. Consider shorter exposures (10–15 s) and discard worst frames during stacking.` });
+    }
+    if (mode === 'time_lapse' && clouds >= 20 && clouds <= 60) {
+        messages.push({ icon: '☁️', col: '#b794f4', bg: 'rgba(183,148,244,0.1)', bdr: 'rgba(183,148,244,0.35)', title: 'Cloud Dynamics Opportunity Detected', body: `Cloud cover at <strong>${clouds}%</strong> — weather conditions are perfect for a cloud dynamics time-lapse! The moving cloud layer will create dramatic motion in your final video.` });
+    }
+    if (mode === 'star_trails' && sq && sq.seeingScore >= 4) {
+        messages.push({ icon: '✅', col: '#68d391', bg: 'rgba(104,211,145,0.08)', bdr: 'rgba(104,211,145,0.3)', title: 'Excellent Seeing for Star Trails', body: `Seeing <strong>${sq.seeingScore}/5</strong> — stars will appear sharp and compact. Trails will have tight, well-defined edges. Great night to shoot!` });
+    }
+    if (!messages.length) { banner.style.display = 'none'; return; }
+    banner.style.display = 'block';
+    banner.innerHTML = messages.map(m => `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-top:1px solid var(--border);"><span style="font-size:1.2rem;line-height:1.4;">${m.icon}</span><div style="flex:1;background:${m.bg};border:1px solid ${m.bdr};border-radius:8px;padding:10px 14px;"><div style="font-size:0.8rem;font-weight:700;color:${m.col};margin-bottom:4px;">${m.title}</div><div style="font-size:0.8rem;color:var(--text-sub);line-height:1.5;">${m.body}</div></div></div>`).join('');
+}
+
+function weatherDesc(code) {
+    if (code === 0) return '☀️ Clear sky';
+    if (code <= 3) return '⛅ Partly cloudy';
+    if (code <= 9) return '🌫️ Foggy';
+    if (code <= 19) return '🌧️ Drizzle';
+    if (code <= 29) return '🌨️ Precipitation';
+    if (code <= 39) return '🌫️ Fog';
+    if (code <= 49) return '🌧️ Drizzle';
+    if (code <= 59) return '🌧️ Rain';
+    if (code <= 69) return '❄️ Snow';
+    if (code <= 79) return '🌨️ Sleet';
+    if (code <= 84) return '🌦️ Rain showers';
+    if (code <= 94) return '⛈️ Thunderstorm';
+    return '⛈️ Heavy thunderstorm';
+}
+
+// ============================================
+// THUMBNAILS AND DISPLAY
+const THUMBNAILS = {
+    "M1": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Crab_Nebula.jpg/320px-Crab_Nebula.jpg",
+    "M2": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/M2_Globular_Cluster_by_HST.jpg/320px-M2_Globular_Cluster_by_HST.jpg",
+    "M3": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Messier_3_Hubble_StarClusters.jpg/320px-Messier_3_Hubble_StarClusters.jpg",
+    "M4": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/M4_Globular_cluster_Hubble_Space_Telescope.jpg/320px-M4_Globular_cluster_Hubble_Space_Telescope.jpg",
+    "M5": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/M5s.jpg/320px-M5s.jpg",
+    "M8": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Lagoon_Nebula_ESO.jpg/320px-Lagoon_Nebula_ESO.jpg",
+    "M13": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Messier_13_Hubble_WikiSky.jpg/320px-Messier_13_Hubble_WikiSky.jpg",
+    "M16": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Pillars_of_creation_2014_HST_WFC3-UVIS_full-res_denoised.jpg/320px-Pillars_of_creation_2014_HST_WFC3-UVIS_full-res_denoised.jpg",
+    "M17": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Omega_Nebula.jpg/320px-Omega_Nebula.jpg",
+    "M20": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Trifid.nebula.arp.750pix.jpg/320px-Trifid.nebula.arp.750pix.jpg",
+    "M27": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Dumbbell_Nebula.jpg/320px-Dumbbell_Nebula.jpg",
+    "M31": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Andromeda_Galaxy_%28with_h-alpha%29.jpg/320px-Andromeda_Galaxy_%28with_h-alpha%29.jpg",
+    "M32": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/M32_HST.jpg/320px-M32_HST.jpg",
+    "M33": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Triangulum_Galaxy_-_Hubble_Legacy_Archive.jpg/320px-Triangulum_Galaxy_-_Hubble_Legacy_Archive.jpg",
+    "M42": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Orion_Nebula_-_Hubble_2006_mosaic_18000.jpg/320px-Orion_Nebula_-_Hubble_2006_mosaic_18000.jpg",
+    "M43": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/M43_HST.jpg/320px-M43_HST.jpg",
+    "M44": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Messier44.jpg/320px-Messier44.jpg",
+    "M45": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Pleiades_large.jpg/320px-Pleiades_large.jpg",
+    "M51": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Whirlpool_Galaxy_-_Hubble_2005.jpg/320px-Whirlpool_Galaxy_-_Hubble_2005.jpg",
+    "M57": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/M57_The_Ring_Nebula.JPG/320px-M57_The_Ring_Nebula.JPG",
+    "M63": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/M63.jpg/320px-M63.jpg",
+    "M64": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/M64.jpg/320px-M64.jpg",
+    "M74": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/M74_by_HST.jpg/320px-M74_by_HST.jpg",
+    "M78": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/M78.jpg/320px-M78.jpg",
+    "M81": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Messier_81_HST.jpg/320px-Messier_81_HST.jpg",
+    "M82": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/M82_HST_ACS_2006-14-a-large_web.jpg/320px-M82_HST_ACS_2006-14-a-large_web.jpg",
+    "M83": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Messier83_-_Heic1403a.jpg/320px-Messier83_-_Heic1403a.jpg",
+    "M87": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/M87_jet.jpg/320px-M87_jet.jpg",
+    "M97": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Owl_Nebula_M97.png/320px-Owl_Nebula_M97.png",
+    "M101": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/M101_hires_STScI-PRC2006-10a.jpg/320px-M101_hires_STScI-PRC2006-10a.jpg",
+    "M104": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/M104_ngc4594_sombrero_galaxy_hi-res.jpg/320px-M104_ngc4594_sombrero_galaxy_hi-res.jpg",
+    "M106": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Messier_106_image_by_Adam_Block%2C_HST.jpg/320px-Messier_106_image_by_Adam_Block%2C_HST.jpg",
+    "NGC7293": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Helixtwo.jpg/320px-Helixtwo.jpg",
+    "NGC891": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/NGC_891_which_is_located_30_million_light_years_away.jpg/320px-NGC_891_which_is_located_30_million_light_years_away.jpg",
+    "NGC6992": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Veil_Nebula_-_NGC_6960.jpg/320px-Veil_Nebula_-_NGC_6960.jpg",
+    "NGC2244": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Rosette_Nebula.jpg/320px-Rosette_Nebula.jpg"
+};
+
+const monthsNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function renderMonths(arr) {
+    const c = document.getElementById('monthsList');
+    c.innerHTML = '';
+    monthsNames.forEach((n, i) => {
+        const el = document.createElement('div');
+        el.className = `month-pill ${arr.includes(i) ? 'active' : ''}`;
+        el.innerText = n;
+        c.appendChild(el);
+    });
+}
+
 function getDate() {
     const v = document.getElementById('obsDate').value;
     return v ? new Date(v + 'T12:00:00') : new Date();
 }
 
-const monthsNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+// ============================================
+// MAIN SHOW FUNCTION (Deep Sky Object Display)
+function show(obj) {
+    window._lastObj = obj;
+    const typeIcons = { 'galaxy': '🌀', 'globular': '⚪', 'nebula': '☁️', 'open': '✨', 'cluster': '✨', 'planetary': '🪐', 'remnant': '💥' };
+    const lowerType = obj.type.toLowerCase();
+    let icon = '🔭';
+    for (const [key, val] of Object.entries(typeIcons)) {
+        if (lowerType.includes(key)) { icon = val; break; }
+    }
+    document.getElementById('typeIcon').innerText = icon;
+    document.getElementById('astrobinLink').href = `https://www.astrobin.com/search/?q=${obj.id}`;
+    document.getElementById('objId').innerHTML = `${obj.id} <span id="typeIcon" style="font-size:1.2rem;opacity:0.8;">${icon}</span>`;
+    document.getElementById('objName').innerText = obj.name;
+    document.getElementById('objType').innerText = obj.type;
+    document.getElementById('objType2').innerText = obj.type;
+    document.getElementById('objMag').innerText = obj.mag;
+    document.getElementById('objAdvice').innerText = obj.advice;
+    const b = document.getElementById('objDiff');
+    b.innerText = obj.diff === 'Easy' ? 'EASY' : obj.diff === 'Hard' ? 'HARD' : 'INTERMEDIATE';
+    b.className = `badge ${obj.diff === 'Easy' ? 'easy' : obj.diff === 'Hard' ? 'hard' : 'intermediate'}`;
+    
+    const recommendedFilter = getRecommendedFilter(obj);
+    const filterChanged = recommendedFilter !== obj.settings.filter;
+    document.getElementById('valFiltro').innerHTML = filterChanged ? obj.settings.filter + ' <span style="color:#f6ad55;font-size:0.8rem;font-weight:700">→ ' + recommendedFilter + '</span>' : recommendedFilter;
+    const filterNoteEl = document.getElementById('noteFiltro');
+    if (filterChanged) {
+        const isReflection = /reflection|reflect|blue|dust|scattered/i.test((obj.advice || '') + ' ' + (obj.name || ''));
+        filterNoteEl.innerHTML = isReflection ? '<span style="color:#f6ad55;">Reflection nebula: broadband Astro/IR-CUT filter recommended (not Dual-band)</span>' : obj.settings.noteFiltro;
+    } else {
+        filterNoteEl.innerText = obj.settings.noteFiltro;
+    }
+    
+    const filterTipText = document.getElementById('filterTipText');
+    if (filterTipText) {
+        if (lowerType.includes('galaxy')) {
+            filterTipText.innerHTML = 'For galaxies, use a broadband Astro/IR-CUT filter to preserve natural star colors. Dual-band filters are not recommended for galaxies.';
+        } else {
+            filterTipText.innerHTML = 'If light pollution is present (Bortle 5+), use a dual-band filter. Aim for moonless nights for maximum contrast.';
+        }
+    }
+    
+    obj._effectiveFilter = recommendedFilter;
+    renderMonths(obj.months);
+    
+    const date = getDate();
+    const pts = getAltCurve(obj.ra_h, obj.dec, date);
+    let maxA = -99, maxH = 24;
+    pts.forEach(p => { if (p.alt > maxA) { maxA = p.alt; maxH = p.h; } });
+    const hh = Math.floor(maxH) % 24, mm = Math.round((maxH % 1) * 60);
+    const culm = String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+    const nightPts = pts.filter(p => p.alt >= 30);
+    let winStr;
+    if (nightPts.length) {
+        const fmt = h => { const hh2 = Math.floor(h) % 24, mm2 = Math.round((h % 1) * 60); return String(hh2).padStart(2, '0') + ':' + String(mm2).padStart(2, '0'); };
+        winStr = '✅ ' + fmt(nightPts[0].h) + ' – ' + fmt(nightPts[nightPts.length - 1].h) + ' (alt >30°)';
+    } else {
+        const nightAllPts = pts;
+        const maxNightAlt = nightAllPts.length ? Math.round(Math.max(...nightAllPts.map(p => p.alt))) : -99;
+        const bestMonths = obj.months && obj.months.length ? obj.months.map(m => monthsNames[m]).join(', ') : '—';
+        winStr = '⚠️ Not optimal tonight (max ' + maxNightAlt + '°). Best months: ' + bestMonths;
+    }
+    const altCls = maxA >= 60 ? 'color:#68d391' : maxA >= 30 ? 'color:#f6ad55' : 'color:#fc8181';
+    document.getElementById('altDateLabel').innerText = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    document.getElementById('altLocLabel').innerText = 'Lat ' + userLat.toFixed(1) + '° Lon ' + userLon.toFixed(1) + '°';
+    document.getElementById('altStats').innerHTML = '<span style="' + altCls + '">Max alt: <strong>' + (maxA > -90 ? Math.round(maxA) + '°' : 'Always below horizon') + '</strong></span>' + (maxA > -90 ? '<span>Culmination: <strong>' + culm + '</strong></span>' : '') + '<span>Window &gt;30° (night): <strong>' + winStr + '</strong></span>';
+    
+    const culminationHour = maxH;
+    const cardinalDir = calculateCardinalDirectionAtTime(obj, date, culminationHour);
+    const cardinalEl = document.getElementById('cardinalDir');
+    if (cardinalEl) {
+        cardinalEl.innerHTML = `<span class="direction-badge">${cardinalDir}</span> at culmination (${culm})`;
+    }
+    
+    const luna = lunaPhase(date);
+    const limp = lunaImpact(luna, obj._effectiveFilter || obj.settings.filter, obj.type);
+    document.getElementById('lunarIcon').innerText = lunaIcon(luna);
+    document.getElementById('lunarPct').innerText = luna + '% illuminated';
+    document.getElementById('lunarLabel').innerText = date.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+    const impEl = document.getElementById('lunarImpact');
+    impEl.innerText = limp.txt;
+    impEl.style.cssText = 'display:inline-block;margin-top:5px;font-size:0.75rem;font-weight:700;padding:3px 10px;border-radius:4px;background:' + limp.bg + ';color:' + limp.col + ';border:1px solid ' + limp.bdr;
+    document.getElementById('lunarRow').style.display = 'flex';
+    
+    const bortle = parseInt(document.getElementById('bortleSelect').value) || 5;
+    document.getElementById('bortleValue').innerText = bortle;
+    document.getElementById('bortleValueGain').innerText = bortle;
+    
+    const baseExpVal = parseInt(obj.settings.exp) || 30;
+    const baseGainVal = parseInt(obj.settings.gain) || 70;
+    document.getElementById('baseExp').innerHTML = baseExpVal + 's';
+    document.getElementById('baseGain').innerHTML = baseGainVal;
+    
+    const adj = applyCorrections(obj.settings.gain, obj.settings.exp, luna, obj._effectiveFilter || obj.settings.filter, bortle, obj.type, obj.advice);
+    document.getElementById('adaptedExp').innerHTML = adj.exp + 's';
+    document.getElementById('adaptedExpNote').innerHTML = adj.expBase !== adj.exp ? 'Snapped from ' + adj.expBase + 's to nearest hardware value' : 'Matches hardware exactly';
+    document.getElementById('adaptedGain').innerHTML = adj.gain;
+    document.getElementById('adaptedGainNote').innerHTML = adj.gainBase !== adj.gain ? 'Snapped from ' + adj.gainBase + ' to nearest hardware value' : 'Matches hardware exactly';
+    
+    const banner = buildBanner(adj, luna, bortle, obj._effectiveFilter || obj.settings.filter, obj.type);
+    let corrBanner = document.getElementById('corrBanner');
+    if (!corrBanner) {
+        corrBanner = document.createElement('div');
+        corrBanner.id = 'corrBanner';
+        corrBanner.style.cssText = 'margin:0 0 12px 0;padding:12px 16px;border-radius:8px;border:1px solid;line-height:1.5;';
+        const sheetRows = document.querySelector('.tech-sheet');
+        if (sheetRows) sheetRows.insertBefore(corrBanner, sheetRows.firstChild);
+    }
+    if (corrBanner) {
+        corrBanner.style.background = banner.bg;
+        corrBanner.style.color = banner.color;
+        corrBanner.style.borderColor = banner.border;
+        corrBanner.innerHTML = banner.html;
+    }
+    
+    const sess = sessCalc(obj.settings.frames, obj.settings.exp);
+    document.getElementById('sessMin').innerText = sess.min;
+    document.getElementById('sessMinNote').innerText = sess.minN;
+    document.getElementById('sessOk').innerText = sess.ok;
+    document.getElementById('sessOkNote').innerText = sess.okN;
+    document.getElementById('sessBar').style.width = sess.pct + '%';
+    document.getElementById('sessionRow').style.display = 'flex';
+    
+    const thumb = document.getElementById('objThumb');
+    if (thumb) {
+        const url = THUMBNAILS[obj.id];
+        if (url) {
+            thumb.src = url;
+            thumb.style.display = 'block';
+            thumb.alt = obj.name;
+        } else {
+            thumb.style.display = 'none';
+            thumb.src = '';
+        }
+    }
+    const stLink = document.getElementById('stellariumLink');
+    if (stLink) stLink.href = 'https://stellarium-web.org/?objectId=' + encodeURIComponent(obj.id);
+    const globalExportSection = document.getElementById('globalExportSection');
+    if (globalExportSection) globalExportSection.style.display = 'block';
+    document.getElementById('sheet').style.display = 'block';
+    document.getElementById('tipsSection').style.display = 'block';
+    window._lastLuna = lunaPhase(getDate());
+    updatePlanner(obj);
+    document.getElementById('sheet').scrollIntoView({ behavior: 'smooth' });
+    requestAnimationFrame(() => {
+        const c = document.getElementById('altCanvas');
+        if (c) { c.style.height = '180px'; }
+        setTimeout(() => drawAlt(pts, date), 50);
+    });
+}
 
+function load(id) {
+    const o = dwarfDB.find(x => x.id === id);
+    if (o) show(o);
+}
+
+function find() {
+    const q = (document.getElementById('search').value || '').trim().toUpperCase();
+    if (!q) { alert('Enter an object name or ID to search.'); return; }
+    let o = dwarfDB.find(x => x.id.toUpperCase() === q);
+    if (!o) o = dwarfDB.find(x => x.id.toUpperCase().includes(q) || x.name.toUpperCase().includes(q) || x.type.toUpperCase().includes(q));
+    if (o) {
+        show(o);
+        closeSuggestions();
+        document.getElementById('search').value = '';
+    } else alert('Object not found. Try: M42, Andromeda, Nebula…');
+}
+
+function closeSuggestions() {
+    const el = document.getElementById('searchSuggestions');
+    if (el) el.remove();
+}
+
+// ============================================
+// SEARCH SUGGESTIONS
+document.getElementById('search').addEventListener('input', function() {
+    closeSuggestions();
+    const q = this.value.trim().toUpperCase();
+    if (!q || q.length < 1) return;
+    const matches = dwarfDB.filter(x => x.id.toUpperCase().includes(q) || x.name.toUpperCase().includes(q) || x.type.toUpperCase().includes(q)).slice(0, 8);
+    if (!matches.length) return;
+    const box = document.createElement('div');
+    box.id = 'searchSuggestions';
+    box.style.cssText = 'position:absolute;top:100%;left:0;right:0;z-index:999;background:var(--bg-panel);border:1px solid var(--accent);border-top:none;border-radius:0 0 10px 10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.5);';
+    box.innerHTML = matches.map(o => {
+        const ic = o.type.toLowerCase().includes('galaxy') ? '🌌' : o.type.toLowerCase().includes('globular') ? '✨' : o.type.toLowerCase().includes('open') ? '⭐' : o.type.toLowerCase().includes('planetary') ? '💫' : o.type.toLowerCase().includes('remnant') ? '💥' : '🌫️';
+        const dc = o.diff === 'Easy' ? '#68d391' : o.diff === 'Hard' ? '#fc8181' : '#f6ad55';
+        return `<div onclick="load('${o.id}');document.getElementById('search').value='';closeSuggestions();" style="display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='rgba(183,148,244,0.1)'" onmouseout="this.style.background='transparent'"><span>${ic}</span><span style="font-family:var(--font-mono);font-weight:700;color:var(--accent);min-width:65px;">${o.id}</span><span style="flex:1;font-size:0.85rem;">${o.name}</span><span style="font-size:0.72rem;color:var(--text-sub);">${o.type}</span><span style="font-size:0.68rem;font-weight:700;color:${dc};padding:2px 6px;border-radius:3px;border:1px solid ${dc};">${o.diff === 'Intermediate' ? 'INT' : o.diff.toUpperCase()}</span></div>`;
+    }).join('');
+    const sb = document.querySelector('.search-box');
+    sb.style.position = 'relative';
+    sb.appendChild(box);
+});
+
+document.getElementById('search').addEventListener('keyup', e => {
+    if (e.key === 'Enter') find();
+    if (e.key === 'Escape') { closeSuggestions(); e.target.value = ''; }
+    if (!e.target.value.trim()) { closeSuggestions(); document.getElementById('sheet').style.display = 'none'; document.getElementById('tipsSection').style.display = 'none'; }
+});
+
+document.addEventListener('click', e => { if (!e.target.closest('.search-box')) closeSuggestions(); });
+
+// ============================================
+// QUICK GUIDE TOGGLE
+function toggleGuide() {
+    const content = document.getElementById('guideContent');
+    const arrow = document.getElementById('guideArrow');
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        arrow.style.transform = 'rotate(180deg)';
+    } else {
+        content.style.display = 'none';
+        arrow.style.transform = 'rotate(0deg)';
+    }
+}
+
+// ============================================
+// TONIGHT'S BEST PANEL
+let tonightFilter = 'all';
+let tonightOpen = true;
+const TONIGHT_PAGE_SIZE = 24;
+let tonightPage = 1;
+
+function toggleTonight() {
+    tonightOpen = !tonightOpen;
+    document.getElementById('tonightContent').style.display = tonightOpen ? 'block' : 'none';
+    document.getElementById('tonightArrow').style.transform = tonightOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
+}
+
+function tonightLoadMore() {
+    tonightPage++;
+    renderTonight(window._tonightResults || []);
+}
+
+function setTonightFilter(f) {
+    tonightFilter = f;
+    tonightPage = 1;
+    const ids = ['tbtnAll', 'tbtnGal', 'tbtnNeb', 'tbtnGlob', 'tbtnEasy', 'tbtnInt', 'tbtnHard'];
+    const vals = ['all', 'Galaxy', 'Nebula', 'Globular', 'Easy', 'Intermediate', 'Hard'];
+    ids.forEach((id, i) => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        const active = vals[i] === f;
+        btn.style.background = active ? 'var(--accent)' : 'transparent';
+        btn.style.color = active ? '#000' : 'var(--text-sub)';
+        btn.style.borderColor = active ? 'var(--accent)' : 'var(--border)';
+        btn.style.fontWeight = active ? '700' : '400';
+    });
+    const sel = document.getElementById('tonightFilterSelect');
+    if (sel && sel.value !== f) sel.value = f;
+    renderTonight(window._tonightResults || []);
+}
+
+function buildTonight() {
+    const date = getDate();
+    const results = [];
+    dwarfDB.forEach(obj => {
+        const pts = getAltCurve(obj.ra_h, obj.dec, date);
+        const nightPts = pts.filter(p => p.alt >= 30);
+        if (!nightPts.length) return;
+        let maxAlt = -99;
+        nightPts.forEach(p => { if (p.alt > maxAlt) maxAlt = p.alt; });
+        const fmt = h => { const hh = Math.floor(h) % 24, mm = Math.round((h % 1) * 60); return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0'); };
+        const winStart = fmt(nightPts[0].h);
+        const winEnd = fmt(nightPts[nightPts.length - 1].h);
+        results.push({ obj, maxAlt, winStart, winEnd });
+    });
+    results.sort((a, b) => b.maxAlt - a.maxAlt);
+    window._tonightResults = results;
+    renderTonight(results);
+    const subtitle = document.getElementById('tonightSubtitle');
+    if (subtitle) subtitle.innerText = `${results.length} objects visible tonight · ${date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} · Lat ${userLat.toFixed(1)}°`;
+}
+
+function renderTonight(results) {
+    const grid = document.getElementById('tonightGrid');
+    const count = document.getElementById('tonightCount');
+    let filtered = results;
+    if (tonightFilter === 'Easy' || tonightFilter === 'Intermediate' || tonightFilter === 'Hard') {
+        filtered = results.filter(r => r.obj.diff === tonightFilter);
+    } else if (tonightFilter !== 'all') {
+        filtered = results.filter(r => r.obj.type.toLowerCase().includes(tonightFilter.toLowerCase()));
+    }
+    if (!filtered.length) {
+        grid.innerHTML = '<div style="color:var(--text-sub);font-size:0.85rem;grid-column:1/-1;text-align:center;padding:20px 0;">No objects matching this filter visible tonight.</div>';
+        if (count) count.innerText = '';
+        return;
+    }
+    const totalVisible = filtered.length;
+    const pageItems = filtered.slice(0, tonightPage * TONIGHT_PAGE_SIZE);
+    const hasMore = totalVisible > pageItems.length;
+    if (count) count.innerText = `${totalVisible} object${totalVisible !== 1 ? 's' : ''} visible`;
+    grid.innerHTML = pageItems.map(r => {
+        const obj = r.obj;
+        const altColor = r.maxAlt >= 60 ? '#68d391' : r.maxAlt >= 40 ? '#f6ad55' : '#fc8181';
+        const barWidth = Math.round(Math.min(100, (r.maxAlt / 90) * 100));
+        const diffClass = obj.diff === 'Easy' ? 'color:#68d391;background:rgba(104,211,145,0.15);border:1px solid #68d391;' : obj.diff === 'Hard' ? 'color:#fc8181;background:rgba(252,129,129,0.15);border:1px solid #fc8181;' : 'color:#f6ad55;background:rgba(246,173,85,0.15);border:1px solid #f6ad55;';
+        const typeIcon = obj.type.toLowerCase().includes('galaxy') ? '🌌' : obj.type.toLowerCase().includes('globular') ? '✨' : obj.type.toLowerCase().includes('open') ? '⭐' : obj.type.toLowerCase().includes('planetary') ? '💫' : obj.type.toLowerCase().includes('remnant') ? '💥' : '🌫️';
+        return `<div class="tonight-card" onclick="load('${obj.id}')"><span class="tc-diff" style="${diffClass}">${obj.diff === 'Easy' ? 'EASY' : obj.diff === 'Hard' ? 'HARD' : 'INT'}</span><div class="tc-id">${typeIcon} ${obj.id}</div><div class="tc-name">${obj.name}</div><div class="tc-alt" style="color:${altColor}">↑ ${Math.round(r.maxAlt)}°</div><div class="tc-win">🕐 ${r.winStart} – ${r.winEnd}</div><div class="tc-bar"><div class="tc-bar-fill" style="width:${barWidth}%;background:${altColor};"></div></div></div>`;
+    }).join('');
+    if (hasMore) {
+        const remaining = totalVisible - pageItems.length;
+        const loadMoreEl = document.createElement('div');
+        loadMoreEl.style.cssText = 'grid-column:1/-1;text-align:center;padding:10px 0 4px;';
+        loadMoreEl.innerHTML = `<button onclick="tonightLoadMore()" style="font-size:0.8rem;padding:8px 24px;border-radius:7px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;font-weight:700;">⬇ Load more (${remaining} remaining)</button>`;
+        grid.appendChild(loadMoreEl);
+    }
+}
+
+// ============================================
+// SESSION LOG MANAGEMENT
+let sessionLog = [];
+try { sessionLog = JSON.parse(localStorage.getItem('dwarf_log') || '[]'); } catch(e) {}
+
+function addToLog() {
+    const mode = (document.getElementById('obsMode') || {}).value || 'deep_sky';
+    const notes = document.getElementById('sessionNotes').value.trim();
+    const date = document.getElementById('obsDate').value || new Date().toISOString().split('T')[0];
+    const bortle = document.getElementById('bortleSelect').value;
+    const isStarTrails = mode === 'star_trails';
+    
+    let entry;
+    if (isStarTrails && window._currentStarTrailsTarget) {
+        const target = window._currentStarTrailsTarget;
+        const exp = parseInt(document.getElementById('st_exp')?.value) || 30;
+        const frames = parseInt(document.getElementById('st_r_frames')?.textContent) || 120;
+        entry = {
+            date, id: target.id, name: target.name, exp: exp + 's', gain: OBS_MODES.star_trails.defaults.gain,
+            filter: OBS_MODES.star_trails.defaults.filter, frames: frames, bortle, lat: userLat, lon: userLon,
+            notes: notes || target.notes, mode: 'star_trails', starTrails: true
+        };
+    } else if (window._lastObj && mode === 'deep_sky') {
+        const obj = window._lastObj;
+        entry = {
+            date, id: obj.id, name: obj.name, exp: obj.settings.exp, gain: obj.settings.gain,
+            filter: obj.settings.filter, frames: obj.settings.frames, bortle, lat: userLat, lon: userLon,
+            notes: notes, mode: 'deep_sky', starTrails: false
+        };
+    } else if (mode === 'milky_way') {
+        entry = {
+            date, id: 'Milky Way', name: 'Milky Way Core', exp: '10s', gain: '80', filter: 'None',
+            frames: '30', bortle, lat: userLat, lon: userLon, notes: notes, mode: 'milky_way', starTrails: false
+        };
+    } else if (mode === 'time_lapse') {
+        entry = {
+            date, id: 'Time-Lapse', name: 'Time-Lapse Sequence', exp: '1s', gain: '40', filter: 'None',
+            frames: '600', bortle, lat: userLat, lon: userLon, notes: notes, mode: 'time_lapse', starTrails: false
+        };
+    } else {
+        alert('No target selected. Please select a target first.');
+        return;
+    }
+    
+    sessionLog.push(entry);
+    try { localStorage.setItem('dwarf_log', JSON.stringify(sessionLog)); } catch(e) {}
+    renderLog();
+    document.getElementById('sessionNotes').value = '';
+}
+
+function renderLog() {
+    const list = document.getElementById('sessionLogList');
+    const exportBtn = document.getElementById('exportBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    if (!sessionLog.length) {
+        list.innerHTML = '<div style="opacity:0.5">No sessions logged yet.</div>';
+        exportBtn.style.display = 'none';
+        clearBtn.style.display = 'none';
+        return;
+    }
+    exportBtn.style.display = 'inline-block';
+    clearBtn.style.display = 'inline-block';
+    list.innerHTML = sessionLog.slice().reverse().map((e, i) => {
+        const showStarStax = e.starTrails || e.mode === 'star_trails';
+        const starStaxBadge = showStarStax ? `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(183,148,244,0.15);border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:2px 7px;font-size:0.68rem;font-weight:700;font-family:var(--font-mono);white-space:nowrap;">⚙️ Ready for StarStaX</span>` : '';
+        return `<div style="padding:6px 0;border-bottom:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;align-items:center;"><span style="color:var(--accent);font-family:var(--font-mono);font-weight:700;">${e.id}</span><span>${e.date}</span><span>⏱️${e.exp}</span><span>📶${e.gain}</span><span>⭕${e.filter}</span><span>🌆B${e.bortle}</span>${starStaxBadge}${e.notes ? `<span style="color:var(--text-sub);font-style:italic;">"${e.notes}"</span>` : ''}<button onclick="removeLog(${sessionLog.length - 1 - i})" style="margin-left:auto;background:none;border:none;color:var(--text-sub);cursor:pointer;font-size:0.8rem;">✕</button></div>`;
+    }).join('');
+}
+
+function removeLog(idx) {
+    sessionLog.splice(idx, 1);
+    try { localStorage.setItem('dwarf_log', JSON.stringify(sessionLog)); } catch(e) {}
+    renderLog();
+}
+
+function clearLog() {
+    if (!confirm('Clear all session logs?')) return;
+    sessionLog = [];
+    try { localStorage.removeItem('dwarf_log'); } catch(e) {}
+    renderLog();
+}
+
+function exportCSV() {
+    const header = 'Date,Object ID,Object Name,Exposure,Gain,Filter,Frames,Bortle,Latitude,Longitude,Mode,Notes';
+    const rows = sessionLog.map(e => {
+        const isStarTrails = e.starTrails || e.mode === 'star_trails';
+        let notesVal = e.notes || '';
+        if (isStarTrails) {
+            const starStaxNote = "Process with StarStaX using Gap Filling mode.";
+            notesVal = notesVal ? `${notesVal} | ${starStaxNote}` : starStaxNote;
+        }
+        const modeLabel = e.mode || 'deep_sky';
+        const escapedNotes = notesVal.replace(/"/g, '""');
+        return [
+            e.date, e.id, `"${e.name.replace(/"/g, '""')}"`, e.exp, e.gain, e.filter,
+            e.frames, e.bortle, e.lat, e.lon, modeLabel, `"${escapedNotes}"`
+        ].join(',');
+    });
+    const csv = [header, ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dwarf_sessions_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+renderLog();
+
+// ============================================
+// PRESET LOCATION LISTENER
+document.getElementById('presetLoc').addEventListener('change', function() {
+    if (this.value !== 'custom') {
+        const [lat, lon] = this.value.split(',').map(Number);
+        document.getElementById('latInput').value = lat;
+        document.getElementById('lonInput').value = lon;
+    }
+});
+
+// ============================================
+// RESIZE HANDLER FOR ALTITUDE GRAPH
+window.addEventListener('resize', () => {
+    if (window._lastObj) {
+        const d = getDate();
+        const pts = getAltCurve(window._lastObj.ra_h, window._lastObj.dec, d);
+        requestAnimationFrame(() => {
+            const c = document.getElementById('altCanvas');
+            if (c) { c.style.height = '180px'; }
+            setTimeout(() => drawAlt(pts, d), 50);
+        });
+    }
+});
+
+// ============================================
+// DATE CHANGE LISTENER
+document.getElementById('obsDate').addEventListener('change', () => {
+    if (window._lastObj) show(window._lastObj);
+    tonightPage = 1;
+    buildTonight();
+});
+
+// ============================================
+// INITIAL LOAD OF TONIGHT'S BEST
+setTimeout(() => buildTonight(), 800);
+
+// ============================================
+// RESTORE LAST OBSERVATION MODE
+(function() {
+    try {
+        const savedMode = localStorage.getItem('dwarf_obs_mode');
+        if (savedMode && savedMode !== 'deep_sky') {
+            const sel = document.getElementById('obsMode');
+            if (sel) sel.value = savedMode;
+            switchObsMode(savedMode);
+        }
+    } catch(e) {}
+})();
+
+// ============================================
+// COMPLETE CATALOG OF MESSIER AND NGC OBJECTS (M1 to M110 + 40+ NGC)
 const dwarfDB = [
     {id:"M1",name:"Crab Nebula",type:"Supernova Remnant",mag:"8.4",diff:"Intermediate",ra_h:5,dec:22,settings:{exp:"25s",gain:"70",frames:"40/60",filter:"Dual-band",noteExp:"Fine filament details",noteGain:"High for gas emission",noteFiltro:"Enhances Ha/OIII"},months:[10,11,0,1,2],advice:"Inner filaments benefit from 3+ hours integration. Dual-band essential."},
     {id:"M2",name:"Pegasus Cluster",type:"Globular",mag:"6.5",diff:"Easy",ra_h:21,dec:-1,settings:{exp:"20s",gain:"50",frames:"40/60",filter:"Astro",noteExp:"Short",noteGain:"Medium",noteFiltro:"Natural light"},months:[7,8,9,10],advice:"One of the brightest globulars. 2x binning recommended."},
@@ -755,936 +1976,3 @@ const dwarfDB = [
     {id:"NGC 7662",name:"Blue Snowball",type:"Planetary",mag:"9.2",diff:"Intermediate",ra_h:23,dec:42,settings:{exp:"35s",gain:"85",frames:"40/60",filter:"Dual-band",noteExp:"Long",noteGain:"High",noteFiltro:"Enhances Ha/OIII"},months:[9,10,11],advice:"Small, bright."},
     {id:"NGC 7789",name:"Cassiopeia Cluster",type:"Open",mag:"6.7",diff:"Intermediate",ra_h:23,dec:56,settings:{exp:"25s",gain:"60",frames:"40/60",filter:"Astro",noteExp:"Medium",noteGain:"Medium",noteFiltro:"Natural light"},months:[9,10,11,0],advice:"Rich, old."}
 ];
-
-function applyLocation() {
-    try {
-        localStorage.setItem('dwarf_lat', document.getElementById('latInput').value);
-        localStorage.setItem('dwarf_lon', document.getElementById('lonInput').value);
-        localStorage.setItem('dwarf_bortle', document.getElementById('bortleSelect').value);
-    } catch(e) {}
-    const preset = document.getElementById('presetLoc').value;
-    if (preset !== 'custom') {
-        const [lat, lon] = preset.split(',').map(Number);
-        userLat = lat;
-        userLon = lon;
-    } else {
-        const lat = parseFloat(document.getElementById('latInput').value);
-        const lon = parseFloat(document.getElementById('lonInput').value);
-        if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
-            userLat = lat;
-            userLon = lon;
-        } else {
-            alert('Invalid coordinates. Lat: -90/90, Lon: -180/180');
-            return;
-        }
-    }
-    const currentId = document.getElementById('objId').innerText;
-    if (currentId && document.getElementById('sheet').style.display === 'block') {
-        const obj = dwarfDB.find(x => x.id === currentId);
-        if (obj) show(obj);
-    }
-    tonightPage = 1;
-    buildTonight();
-}
-
-function getRecommendedFilter(obj) {
-    const type = (obj.type || '').toLowerCase();
-    if (type.includes('galaxy')) return 'Astro / IR-CUT';
-    const advice = (obj.advice || '').toLowerCase();
-    const name = (obj.name || '').toLowerCase();
-    if (type.includes('planetary')) return 'Dual-band';
-    if (type.includes('remnant') || type.includes('supernova')) return 'Dual-band';
-    if (type.includes('globular') || type.includes('open') || type.includes('star cloud') || type.includes('asterism') || type.includes('double')) return 'Astro / IR-CUT';
-    if (type.includes('nebula') || type.includes('nebul')) {
-        const isReflection = /reflection|reflect|blue|dust|scattered/i.test(advice + ' ' + name);
-        if (isReflection) return 'Astro / IR-CUT';
-        return 'Dual-band';
-    }
-    return obj.settings.filter;
-}
-
-function renderMonths(arr) {
-    const c = document.getElementById('monthsList');
-    c.innerHTML = '';
-    monthsNames.forEach((n, i) => {
-        const el = document.createElement('div');
-        el.className = `month-pill ${arr.includes(i) ? 'active' : ''}`;
-        el.innerText = n;
-        c.appendChild(el);
-    });
-}
-
-function isFaint(type, advice) {
-    const t = (type + ' ' + (advice || '')).toLowerCase();
-    return /low surface|faint|diffuse|bassa|debole|tenue/.test(t);
-}
-
-function getLunaCorrection(lunaPct, filter) {
-    const isDual = filter === 'Dual-band';
-    let gainCorr, espCorr;
-    if (lunaPct <= 20) { gainCorr = 0; espCorr = 0; }
-    else if (lunaPct <= 40) { gainCorr = -2; espCorr = -8; }
-    else if (lunaPct <= 60) { gainCorr = -4; espCorr = -15; }
-    else if (lunaPct <= 80) { gainCorr = -6; espCorr = -20; }
-    else { gainCorr = -8; espCorr = -25; }
-    if (isDual) {
-        gainCorr = Math.round(gainCorr / 2);
-        espCorr = Math.round(espCorr / 2);
-    }
-    return { gainCorr, espCorr };
-}
-
-function getBortleCorrection(bortle) {
-    if (bortle <= 2) return { gainCorr: 0, espCorr: 0 };
-    else if (bortle <= 4) return { gainCorr: -2, espCorr: -5 };
-    else if (bortle <= 6) return { gainCorr: -5, espCorr: -10 };
-    else if (bortle <= 8) return { gainCorr: -8, espCorr: -15 };
-    else return { gainCorr: -10, espCorr: -20 };
-}
-
-function applyCorrections(baseGain, baseExp, lunaPct, filter, bortle, type, advice) {
-    const lc = getLunaCorrection(lunaPct, filter);
-    const bc = getBortleCorrection(bortle);
-    let gainVal;
-    if (typeof baseGain === 'string' && baseGain.includes('-')) {
-        const parts = baseGain.split('-').map(Number);
-        gainVal = Math.round((parts[0] + parts[1]) / 2);
-    } else {
-        gainVal = parseInt(baseGain) || 65;
-    }
-    const expVal = parseInt(baseExp) || 30;
-    const faintFactor = isFaint(type, advice) ? 0.4 : 1.0;
-    const gainTot = Math.round((lc.gainCorr + bc.gainCorr) * faintFactor);
-    const expTot = Math.round((lc.espCorr + bc.espCorr) * faintFactor);
-    let adjGain = Math.max(0, Math.min(150, gainVal + gainTot));
-    let adjExp = Math.max(1, Math.min(60, expVal + expTot));
-    adjGain = snapToAllowed(adjGain, ALLOWED_GAIN);
-    adjExp = snapToAllowed(adjExp, ALLOWED_EXPOSURE);
-    return {
-        gain: adjGain,
-        exp: adjExp,
-        gainBase: gainVal,
-        expBase: expVal,
-        gainDelta: gainTot,
-        expDelta: expTot,
-        faint: isFaint(type, advice)
-    };
-}
-
-function buildBanner(adj, lunaPct, bortle, filter, objType) {
-    const lc = getLunaCorrection(lunaPct, filter);
-    const bc = getBortleCorrection(bortle);
-    const isDual = filter === 'Dual-band';
-    const isOptimal = adj.gainDelta === 0 && adj.expDelta === 0;
-    const lunaDesc = lunaPct <= 20 ? 'No moon/minimal' : lunaPct <= 40 ? 'Slight crescent moon' : lunaPct <= 60 ? 'Moderate moon' : lunaPct <= 80 ? 'Significant moon' : 'Full moon';
-    const bortleDesc = bortle <= 2 ? 'Perfect dark sky' : bortle <= 4 ? 'Rural sky' : bortle <= 6 ? 'Suburban sky' : bortle <= 8 ? 'Urban sky' : 'City center';
-    if (isOptimal) {
-        return { color: '#68d391', bg: 'rgba(104,211,145,0.08)', border: '#68d391', html: `<div style="font-size:0.85rem;font-weight:700;margin-bottom:6px">✓ Optimal conditions — no corrections applied</div><div style="font-size:0.78rem;opacity:0.85">Dark sky (Bortle ${bortle}) + Moon ${lunaPct}% = base settings are ideal for this object.</div>` };
-    }
-    return { color: '#f6ad55', bg: 'rgba(246,173,85,0.08)', border: '#f6ad55', html: `<div style="font-size:0.85rem;font-weight:700;margin-bottom:8px">⚙ Values adapted to tonight's conditions</div><div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px"><div><span style="opacity:0.7;font-size:0.75rem">🌙 MOON</span><br><span style="font-size:0.8rem">${lunaDesc} (${lunaPct}%)</span><br><span style="font-size:0.75rem;opacity:0.7">Gain ${lc.gainCorr > 0 ? '+' : ''}${lc.gainCorr}${isDual ? ' (÷2 Dual-band)' : ''} · Exp ${lc.espCorr > 0 ? '+' : ''}${lc.espCorr}s${isDual ? ' (÷2)' : ''}</span></div><div><span style="opacity:0.7;font-size:0.75rem">🌆 BORTLE ${bortle}</span><br><span style="font-size:0.8rem">${bortleDesc}</span><br><span style="font-size:0.75rem;opacity:0.7">Gain ${bc.gainCorr > 0 ? '+' : ''}${bc.gainCorr} · Exp ${bc.espCorr > 0 ? '+' : ''}${bc.espCorr}s</span></div>${adj.faint ? `<div><span style="opacity:0.7;font-size:0.75rem">🔭 FAINT OBJECT</span><br><span style="font-size:0.8rem">Low surface brightness</span><br><span style="font-size:0.75rem;opacity:0.7">Corrections reduced 40%</span></div>` : ''}</div><div style="font-size:0.78rem;border-top:1px solid rgba(246,173,85,0.2);padding-top:6px;opacity:0.85">💡 Values shown are an <em>adaptive starting point</em> snapped to DWARF hardware support. Always experiment and note your best results.</div>` };
-}
-
-const MAJOR_CITIES = [[40.71,-74.01],[34.05,-118.24],[41.88,-87.63],[51.51,-0.13],[48.86,2.35],[52.52,13.40],[35.68,139.69],[31.23,121.47],[39.91,116.39],[28.61,77.21],[19.08,72.88],[23.13,-46.63],[19.43,-99.13],[37.77,-122.42],[41.90,12.50],[45.46,9.19],[40.85,14.27],[55.75,37.62],[41.01,28.97],[30.06,31.25],[1.35,103.82],[22.32,114.17],[37.57,126.98],[25.20,55.27],[24.69,46.72],[-33.87,151.21],[-23.55,-46.63],[6.45,3.40],[33.34,44.40],[43.70,-79.42]];
-const MEDIUM_CITIES = [[44.49,11.34],[43.77,11.25],[45.44,12.33],[38.11,13.36],[40.42,-3.70],[41.39,2.15],[38.72,-9.14],[37.98,23.73],[47.37,8.54],[50.85,4.35],[52.37,4.90],[59.91,10.75],[59.33,18.07],[60.17,24.94],[50.08,14.44],[47.50,19.04],[33.75,-84.39],[29.76,-95.37],[32.78,-96.80],[47.61,-122.33],[45.52,-122.68],[39.74,-104.98],[42.36,-71.06],[25.77,-80.19],[29.95,-90.07]];
-
-function distKm(lat1, lon1, lat2, lon2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-
-function estimateBortleInternal(lat, lon) {
-    let minMajor = 99999, minMedium = 99999;
-    MAJOR_CITIES.forEach(([clat, clon]) => {
-        const d = distKm(lat, lon, clat, clon);
-        if (d < minMajor) minMajor = d;
-    });
-    MEDIUM_CITIES.forEach(([clat, clon]) => {
-        const d = distKm(lat, lon, clat, clon);
-        if (d < minMedium) minMedium = d;
-    });
-    if (minMajor < 15) return 9;
-    if (minMajor < 30) return 8;
-    if (minMajor < 60) return 7;
-    if (minMedium < 20) return 7;
-    if (minMajor < 100) return 6;
-    if (minMedium < 50) return 6;
-    if (minMajor < 200) return 5;
-    if (minMedium < 100) return 5;
-    if (minMajor < 400) return 4;
-    return 3;
-}
-
-function detectGPS() {
-    if (!navigator.geolocation) {
-        alert('Geolocation not supported by your browser.');
-        return;
-    }
-    const btn = event.target;
-    btn.innerText = '⏳';
-    btn.disabled = true;
-    navigator.geolocation.getCurrentPosition(function(pos) {
-        const lat = Math.round(pos.coords.latitude * 100) / 100;
-        const lon = Math.round(pos.coords.longitude * 100) / 100;
-        document.getElementById('latInput').value = lat;
-        document.getElementById('lonInput').value = lon;
-        document.getElementById('presetLoc').value = 'custom';
-        userLat = lat;
-        userLon = lon;
-        try {
-            localStorage.setItem('dwarf_lat', lat);
-            localStorage.setItem('dwarf_lon', lon);
-        } catch(e) {}
-        estimateBortleFromCoords(lat, lon);
-        btn.innerText = '📍 GPS';
-        btn.disabled = false;
-        if (window._lastObj) show(window._lastObj);
-    }, function(err) {
-        const msg = err.code === 1 ? 'Location permission denied.\nPlease allow location access in your browser settings, or enter coordinates manually.' : err.code === 2 ? 'Location unavailable.\nPlease enter coordinates manually.' : 'Location request timed out.\nPlease enter coordinates manually.';
-        alert('📍 GPS Error\n\n' + msg);
-        btn.innerText = '📍 GPS';
-        btn.disabled = false;
-    }, { timeout: 15000, enableHighAccuracy: true });
-}
-
-function estimateBortleFromCoords(lat, lon) {
-    const bortle = estimateBortleInternal(lat, lon);
-    const sel = document.getElementById('bortleSelect');
-    const opts = [1, 3, 5, 7, 9];
-    const closest = opts.reduce((a, b) => Math.abs(b - bortle) < Math.abs(a - bortle) ? b : a);
-    sel.value = closest;
-    try { localStorage.setItem('dwarf_bortle', closest); } catch(e) {}
-    showBortleNotice(bortle, closest, true);
-    if (window._lastObj) show(window._lastObj);
-}
-
-function showBortleNotice(bortle, selected, internal) {
-    let notice = document.getElementById('bortleNotice');
-    if (!notice) return;
-    notice.style.display = 'block';
-    if (internal) {
-        notice.style.cssText = 'font-size:0.75rem;color:#f6ad55;margin-top:4px;padding:4px 8px;background:rgba(246,173,85,0.1);border-radius:4px;border:1px solid rgba(246,173,85,0.3);';
-        notice.innerHTML = '📍 Bortle estimated from coordinates (internal): <strong>' + selected + '</strong> — adjust manually if needed';
-    } else {
-        notice.style.cssText = 'font-size:0.75rem;color:#68d391;margin-top:4px;padding:4px 8px;background:rgba(104,211,145,0.1);border-radius:4px;border:1px solid rgba(104,211,145,0.3);';
-        notice.innerHTML = '🌍 Light pollution detected: Bortle <strong>' + Math.round(bortle) + '</strong> — auto-set to <strong>' + selected + '</strong>';
-    }
-    setTimeout(() => { if (notice) notice.style.opacity = '0.3'; }, 6000);
-}
-
-const THUMBNAILS = {
-    "M1": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Crab_Nebula.jpg/320px-Crab_Nebula.jpg",
-    "M2": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/M2_Globular_Cluster_by_HST.jpg/320px-M2_Globular_Cluster_by_HST.jpg",
-    "M3": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Messier_3_Hubble_StarClusters.jpg/320px-Messier_3_Hubble_StarClusters.jpg",
-    "M4": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/M4_Globular_cluster_Hubble_Space_Telescope.jpg/320px-M4_Globular_cluster_Hubble_Space_Telescope.jpg",
-    "M5": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/M5s.jpg/320px-M5s.jpg",
-    "M8": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Lagoon_Nebula_ESO.jpg/320px-Lagoon_Nebula_ESO.jpg",
-    "M13": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Messier_13_Hubble_WikiSky.jpg/320px-Messier_13_Hubble_WikiSky.jpg",
-    "M16": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Pillars_of_creation_2014_HST_WFC3-UVIS_full-res_denoised.jpg/320px-Pillars_of_creation_2014_HST_WFC3-UVIS_full-res_denoised.jpg",
-    "M17": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Omega_Nebula.jpg/320px-Omega_Nebula.jpg",
-    "M20": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Trifid.nebula.arp.750pix.jpg/320px-Trifid.nebula.arp.750pix.jpg",
-    "M27": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Dumbbell_Nebula.jpg/320px-Dumbbell_Nebula.jpg",
-    "M31": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Andromeda_Galaxy_%28with_h-alpha%29.jpg/320px-Andromeda_Galaxy_%28with_h-alpha%29.jpg",
-    "M32": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/M32_HST.jpg/320px-M32_HST.jpg",
-    "M33": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Triangulum_Galaxy_-_Hubble_Legacy_Archive.jpg/320px-Triangulum_Galaxy_-_Hubble_Legacy_Archive.jpg",
-    "M42": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Orion_Nebula_-_Hubble_2006_mosaic_18000.jpg/320px-Orion_Nebula_-_Hubble_2006_mosaic_18000.jpg",
-    "M43": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/M43_HST.jpg/320px-M43_HST.jpg",
-    "M44": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Messier44.jpg/320px-Messier44.jpg",
-    "M45": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Pleiades_large.jpg/320px-Pleiades_large.jpg",
-    "M51": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Whirlpool_Galaxy_-_Hubble_2005.jpg/320px-Whirlpool_Galaxy_-_Hubble_2005.jpg",
-    "M57": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/M57_The_Ring_Nebula.JPG/320px-M57_The_Ring_Nebula.JPG",
-    "M63": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/M63.jpg/320px-M63.jpg",
-    "M64": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/M64.jpg/320px-M64.jpg",
-    "M74": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/M74_by_HST.jpg/320px-M74_by_HST.jpg",
-    "M78": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/M78.jpg/320px-M78.jpg",
-    "M81": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Messier_81_HST.jpg/320px-Messier_81_HST.jpg",
-    "M82": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/M82_HST_ACS_2006-14-a-large_web.jpg/320px-M82_HST_ACS_2006-14-a-large_web.jpg",
-    "M83": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Messier83_-_Heic1403a.jpg/320px-Messier83_-_Heic1403a.jpg",
-    "M87": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/M87_jet.jpg/320px-M87_jet.jpg",
-    "M97": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Owl_Nebula_M97.png/320px-Owl_Nebula_M97.png",
-    "M101": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/M101_hires_STScI-PRC2006-10a.jpg/320px-M101_hires_STScI-PRC2006-10a.jpg",
-    "M104": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/M104_ngc4594_sombrero_galaxy_hi-res.jpg/320px-M104_ngc4594_sombrero_galaxy_hi-res.jpg",
-    "M106": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Messier_106_image_by_Adam_Block%2C_HST.jpg/320px-Messier_106_image_by_Adam_Block%2C_HST.jpg",
-    "NGC7293": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Helixtwo.jpg/320px-Helixtwo.jpg",
-    "NGC891": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/NGC_891_which_is_located_30_million_light_years_away.jpg/320px-NGC_891_which_is_located_30_million_light_years_away.jpg",
-    "NGC6992": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Veil_Nebula_-_NGC_6960.jpg/320px-Veil_Nebula_-_NGC_6960.jpg",
-    "NGC2244": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Rosette_Nebula.jpg/320px-Rosette_Nebula.jpg"
-};
-
-let plannerMode = 'auto';
-
-function setPlannerMode(mode) {
-    plannerMode = mode;
-    const btnAuto = document.getElementById('modeAuto');
-    const btnCon = document.getElementById('modeConstrained');
-    const conInput = document.getElementById('constrainedInput');
-    if (mode === 'auto') {
-        btnAuto.style.background = 'var(--accent)';
-        btnAuto.style.color = '#000';
-        btnAuto.style.borderColor = 'var(--accent)';
-        btnCon.style.background = 'transparent';
-        btnCon.style.color = 'var(--text-sub)';
-        btnCon.style.borderColor = 'var(--border)';
-        if (conInput) conInput.style.display = 'none';
-    } else {
-        btnCon.style.background = 'var(--accent)';
-        btnCon.style.color = '#000';
-        btnCon.style.borderColor = 'var(--accent)';
-        btnAuto.style.background = 'transparent';
-        btnAuto.style.color = 'var(--text-sub)';
-        btnAuto.style.borderColor = 'var(--border)';
-        if (conInput) conInput.style.display = 'block';
-    }
-    if (window._lastObj) updatePlanner(window._lastObj);
-}
-
-function recalcConstrained() {
-    if (window._lastObj) updatePlanner(window._lastObj);
-}
-
-function calcOptimalMinutes(obj, adjExp) {
-    const mag = parseFloat(obj.mag) || 8;
-    const isFaintObj = isFaint(obj.type, obj.advice);
-    const type = obj.type.toLowerCase();
-    let baseMin;
-    if (type.includes('globular') || type.includes('open')) baseMin = 15;
-    else if (type.includes('galaxy')) baseMin = isFaintObj ? 90 : 45;
-    else if (type.includes('planetary')) baseMin = 40;
-    else if (type.includes('remnant')) baseMin = 75;
-    else baseMin = 60;
-    const magMult = mag < 6 ? 0.5 : mag < 8 ? 0.8 : mag < 10 ? 1.2 : 1.6;
-    const bortle = parseInt(document.getElementById('bortleSelect').value) || 5;
-    const bortMult = bortle <= 2 ? 0.7 : bortle <= 4 ? 0.85 : bortle <= 6 ? 1.0 : bortle <= 8 ? 1.3 : 1.6;
-    return Math.round(baseMin * magMult * bortMult);
-}
-
-function qualityLabel(frames, optimal) {
-    const ratio = frames / optimal;
-    if (ratio >= 1.5) return { icon: '🌟', label: 'Excellent' };
-    if (ratio >= 0.9) return { icon: '✅', label: 'Good' };
-    if (ratio >= 0.6) return { icon: '🔶', label: 'Decent' };
-    if (ratio >= 0.3) return { icon: '⚠️', label: 'Minimal' };
-    return { icon: '❌', label: 'Too short' };
-}
-
-function updatePlanner(obj) {
-    const mode = document.getElementById('obsMode').value || 'deep_sky';
-    const data = OBS_MODES[mode];
-    const bortle = parseInt(document.getElementById('bortleSelect').value) || 5;
-    let expSec, gain, filter, sessionMin, frameCount, summary, expNote = 'base value';
-    if (mode === 'deep_sky') {
-        const adjData = applyCorrections(obj.settings.gain, obj.settings.exp, window._lastLuna || 0, obj._effectiveFilter || obj.settings.filter, bortle, obj.type, obj.advice);
-        expSec = adjData.exp;
-        gain = adjData.gain;
-        filter = obj._effectiveFilter || obj.settings.filter;
-        expNote = adjData.expBase !== adjData.exp ? 'adapted from ' + adjData.expBase + 's' : 'base value';
-        const optMin = calcOptimalMinutes(obj, expSec);
-        if (plannerMode === 'auto') {
-            sessionMin = optMin;
-        } else {
-            sessionMin = parseInt(document.getElementById('availableMinutes').value) || 30;
-        }
-        frameCount = Math.round((sessionMin * 60) / expSec);
-        const q = qualityLabel(frameCount, Math.round((optMin * 60) / expSec));
-        summary = plannerMode === 'auto' ? `Tonight for <strong>${obj.id}</strong>: shoot <strong>${frameCount} frames</strong> × <strong>${expSec}s</strong> = <strong>${sessionMin} min</strong> session. ${q.icon} Expected quality: ${q.label}.` : `In your <strong>${sessionMin} min</strong> window: <strong>${frameCount} frames</strong> × <strong>${expSec}s</strong>. ${q.icon} Quality: ${q.label}. Optimal would be ${optMin} min.`;
-        document.getElementById('qsQuality').innerText = q.icon + ' ' + q.label;
-    } else if (mode === 'milky_way') {
-        expSec = 10;
-        gain = 80;
-        filter = "None";
-        sessionMin = 15;
-        frameCount = Math.round((sessionMin * 60) / expSec);
-        summary = `<strong>Milky Way:</strong> Shoot <strong>${frameCount} frames</strong> of 10s. Stacking will reveal the Galactic Core. Best with Bortle ≤ 4.`;
-        document.getElementById('qsQuality').innerText = "🟢 Recommended";
-    } else if (mode === 'star_trails') {
-        expSec = 30;
-        gain = 60;
-        filter = "None";
-        sessionMin = parseInt(document.getElementById('availableMinutes').value) || 120;
-        frameCount = Math.round((sessionMin * 60) / expSec);
-        const bat = sessionMin > 180 ? "⚠️ Battery low" : "✅ Battery OK";
-        summary = `<strong>Star Trails:</strong> Total <strong>${sessionMin} min</strong>. Frames: <strong>${frameCount}</strong>. ${bat}. Memory: ~${(frameCount * 15 / 1024).toFixed(1)} GB.`;
-        document.getElementById('qsQuality').innerText = "🟢 Recommended";
-    } else if (mode === 'time_lapse') {
-        expSec = 1;
-        gain = 40;
-        filter = "None";
-        const videoSec = 20;
-        const fps = 30;
-        frameCount = videoSec * fps;
-        const interval = 5;
-        sessionMin = Math.round((frameCount * interval) / 60);
-        summary = `<strong>Time-Lapse:</strong> To get <strong>${videoSec}s</strong> of video at ${fps}fps, you need <strong>${frameCount} frames</strong>. Total capture time: <strong>~${sessionMin} min</strong>.`;
-        document.getElementById('qsQuality').innerText = "🟡 Medium";
-    }
-    document.getElementById('qsExp').innerText = expSec + 's';
-    document.getElementById('qsExpNote').innerText = expNote;
-    document.getElementById('qsGain').innerText = gain;
-    document.getElementById('qsFilter').innerText = filter;
-    document.getElementById('qsDuration').innerText = sessionMin + ' min';
-    document.getElementById('qsFrames').innerText = frameCount;
-    document.getElementById('qsSummary').innerHTML = summary;
-}
-
-function toggleHDRWorkflow() {
-    const toggle = document.getElementById('hdrToggle');
-    const hdrBox = document.getElementById('hdrWorkflowBox');
-    if (toggle && hdrBox) {
-        if (toggle.checked) {
-            hdrBox.classList.add('visible');
-        } else {
-            hdrBox.classList.remove('visible');
-        }
-    }
-}
-
-function show(obj) {
-    window._lastObj = obj;
-    const typeIcons = { 'galaxy': '🌀', 'globular': '⚪', 'nebula': '☁️', 'open': '✨', 'cluster': '✨', 'planetary': '🪐', 'remnant': '💥' };
-    const lowerType = obj.type.toLowerCase();
-    let icon = '🔭';
-    for (const [key, val] of Object.entries(typeIcons)) {
-        if (lowerType.includes(key)) { icon = val; break; }
-    }
-    document.getElementById('typeIcon').innerText = icon;
-    document.getElementById('astrobinLink').href = `https://www.astrobin.com/search/?q=${obj.id}`;
-    document.getElementById('objId').innerHTML = `${obj.id} <span id="typeIcon" style="font-size:1.2rem;opacity:0.8;">${icon}</span>`;
-    document.getElementById('objName').innerText = obj.name;
-    document.getElementById('objType').innerText = obj.type;
-    document.getElementById('objType2').innerText = obj.type;
-    document.getElementById('objMag').innerText = obj.mag;
-    document.getElementById('objAdvice').innerText = obj.advice;
-    const b = document.getElementById('objDiff');
-    b.innerText = obj.diff === 'Easy' ? 'EASY' : obj.diff === 'Hard' ? 'HARD' : 'INTERMEDIATE';
-    b.className = `badge ${obj.diff === 'Easy' ? 'easy' : obj.diff === 'Hard' ? 'hard' : 'intermediate'}`;
-    
-    const recommendedFilter = getRecommendedFilter(obj);
-    const filterChanged = recommendedFilter !== obj.settings.filter;
-    document.getElementById('valFiltro').innerHTML = filterChanged ? obj.settings.filter + ' <span style="color:#f6ad55;font-size:0.8rem;font-weight:700">→ ' + recommendedFilter + '</span>' : recommendedFilter;
-    const filterNoteEl = document.getElementById('noteFiltro');
-    if (filterChanged) {
-        const isReflection = /reflection|reflect|blue|dust|scattered/i.test((obj.advice || '') + ' ' + (obj.name || ''));
-        filterNoteEl.innerHTML = isReflection ? '<span style="color:#f6ad55;">Reflection nebula: broadband Astro/IR-CUT filter recommended (not Dual-band)</span>' : obj.settings.noteFiltro;
-    } else {
-        filterNoteEl.innerText = obj.settings.noteFiltro;
-    }
-    
-    const filterTipText = document.getElementById('filterTipText');
-    if (filterTipText) {
-        if (lowerType.includes('galaxy')) {
-            filterTipText.innerHTML = 'For galaxies, use a broadband Astro/IR-CUT filter to preserve natural star colors. Dual-band filters are not recommended for galaxies.';
-        } else {
-            filterTipText.innerHTML = 'If light pollution is present (Bortle 5+), use a dual-band filter. Aim for moonless nights for maximum contrast.';
-        }
-    }
-    
-    obj._effectiveFilter = recommendedFilter;
-    renderMonths(obj.months);
-    
-    const date = getDate();
-    const pts = getAltCurve(obj.ra_h, obj.dec, date);
-    let maxA = -99, maxH = 24;
-    pts.forEach(p => { if (p.alt > maxA) { maxA = p.alt; maxH = p.h; } });
-    const hh = Math.floor(maxH) % 24, mm = Math.round((maxH % 1) * 60);
-    const culm = String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
-    const nightPts = pts.filter(p => p.alt >= 30);
-    let winStr;
-    if (nightPts.length) {
-        const fmt = h => { const hh2 = Math.floor(h) % 24, mm2 = Math.round((h % 1) * 60); return String(hh2).padStart(2, '0') + ':' + String(mm2).padStart(2, '0'); };
-        winStr = '✅ ' + fmt(nightPts[0].h) + ' – ' + fmt(nightPts[nightPts.length - 1].h) + ' (alt >30°)';
-    } else {
-        const nightAllPts = pts;
-        const maxNightAlt = nightAllPts.length ? Math.round(Math.max(...nightAllPts.map(p => p.alt))) : -99;
-        const bestMonths = obj.months && obj.months.length ? obj.months.map(m => monthsNames[m]).join(', ') : '—';
-        winStr = '⚠️ Not optimal tonight (max ' + maxNightAlt + '°). Best months: ' + bestMonths;
-    }
-    const altCls = maxA >= 60 ? 'color:#68d391' : maxA >= 30 ? 'color:#f6ad55' : 'color:#fc8181';
-    document.getElementById('altDateLabel').innerText = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-    document.getElementById('altLocLabel').innerText = 'Lat ' + userLat.toFixed(1) + '° Lon ' + userLon.toFixed(1) + '°';
-    document.getElementById('altStats').innerHTML = '<span style="' + altCls + '">Max alt: <strong>' + (maxA > -90 ? Math.round(maxA) + '°' : 'Always below horizon') + '</strong></span>' + (maxA > -90 ? '<span>Culmination: <strong>' + culm + '</strong></span>' : '') + '<span>Window &gt;30° (night): <strong>' + winStr + '</strong></span>';
-    
-    // Cardinal Direction at culmination
-    const culminationHour = maxH;
-    const cardinalDir = calculateCardinalDirectionAtTime(obj, date, culminationHour);
-    const cardinalEl = document.getElementById('cardinalDir');
-    if (cardinalEl) {
-        cardinalEl.innerHTML = `<span class="direction-badge">${cardinalDir}</span> at culmination (${culm})`;
-    }
-    
-    const luna = lunaPhase(date);
-    const limp = lunaImpact(luna, obj._effectiveFilter || obj.settings.filter, obj.type);
-    document.getElementById('lunarIcon').innerText = lunaIcon(luna);
-    document.getElementById('lunarPct').innerText = luna + '% illuminated';
-    document.getElementById('lunarLabel').innerText = date.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
-    const impEl = document.getElementById('lunarImpact');
-    impEl.innerText = limp.txt;
-    impEl.style.cssText = 'display:inline-block;margin-top:5px;font-size:0.75rem;font-weight:700;padding:3px 10px;border-radius:4px;background:' + limp.bg + ';color:' + limp.col + ';border:1px solid ' + limp.bdr;
-    document.getElementById('lunarRow').style.display = 'flex';
-    
-    const bortle = parseInt(document.getElementById('bortleSelect').value) || 5;
-    document.getElementById('bortleValue').innerText = bortle;
-    document.getElementById('bortleValueGain').innerText = bortle;
-    
-    const baseExpVal = parseInt(obj.settings.exp) || 30;
-    const baseGainVal = parseInt(obj.settings.gain) || 70;
-    document.getElementById('baseExp').innerHTML = baseExpVal + 's';
-    document.getElementById('baseGain').innerHTML = baseGainVal;
-    
-    const adj = applyCorrections(obj.settings.gain, obj.settings.exp, luna, obj._effectiveFilter || obj.settings.filter, bortle, obj.type, obj.advice);
-    document.getElementById('adaptedExp').innerHTML = adj.exp + 's';
-    document.getElementById('adaptedExpNote').innerHTML = adj.expBase !== adj.exp ? 'Snapped from ' + adj.expBase + 's to nearest hardware value' : 'Matches hardware exactly';
-    document.getElementById('adaptedGain').innerHTML = adj.gain;
-    document.getElementById('adaptedGainNote').innerHTML = adj.gainBase !== adj.gain ? 'Snapped from ' + adj.gainBase + ' to nearest hardware value' : 'Matches hardware exactly';
-    
-    const banner = buildBanner(adj, luna, bortle, obj._effectiveFilter || obj.settings.filter, obj.type);
-    let corrBanner = document.getElementById('corrBanner');
-    if (!corrBanner) {
-        corrBanner = document.createElement('div');
-        corrBanner.id = 'corrBanner';
-        corrBanner.style.cssText = 'margin:0 0 12px 0;padding:12px 16px;border-radius:8px;border:1px solid;line-height:1.5;';
-        const sheetRows = document.querySelector('.tech-sheet');
-        if (sheetRows) sheetRows.insertBefore(corrBanner, sheetRows.firstChild);
-    }
-    if (corrBanner) {
-        corrBanner.style.background = banner.bg;
-        corrBanner.style.color = banner.color;
-        corrBanner.style.borderColor = banner.border;
-        corrBanner.innerHTML = banner.html;
-    }
-    
-    const sess = sessCalc(obj.settings.frames, obj.settings.exp);
-    document.getElementById('sessMin').innerText = sess.min;
-    document.getElementById('sessMinNote').innerText = sess.minN;
-    document.getElementById('sessOk').innerText = sess.ok;
-    document.getElementById('sessOkNote').innerText = sess.okN;
-    document.getElementById('sessBar').style.width = sess.pct + '%';
-    document.getElementById('sessionRow').style.display = 'flex';
-    
-    const thumb = document.getElementById('objThumb');
-    if (thumb) {
-        const url = THUMBNAILS[obj.id];
-        if (url) {
-            thumb.src = url;
-            thumb.style.display = 'block';
-            thumb.alt = obj.name;
-        } else {
-            thumb.style.display = 'none';
-            thumb.src = '';
-        }
-    }
-    const stLink = document.getElementById('stellariumLink');
-    if (stLink) stLink.href = 'https://stellarium-web.org/?objectId=' + encodeURIComponent(obj.id);
-    const expSecDiv = document.getElementById('exportSection');
-    if (expSecDiv) expSecDiv.style.display = 'block';
-    document.getElementById('sheet').style.display = 'block';
-    document.getElementById('tipsSection').style.display = 'block';
-    window._lastLuna = lunaPhase(getDate());
-    updatePlanner(obj);
-    document.getElementById('sheet').scrollIntoView({ behavior: 'smooth' });
-    requestAnimationFrame(() => {
-        const c = document.getElementById('altCanvas');
-        if (c) { c.style.height = '180px'; }
-        setTimeout(() => drawAlt(pts, date), 50);
-    });
-}
-
-function load(id) {
-    const o = dwarfDB.find(x => x.id === id);
-    if (o) show(o);
-}
-
-function closeSuggestions() {
-    const el = document.getElementById('searchSuggestions');
-    if (el) el.remove();
-}
-
-function find() {
-    const q = (document.getElementById('search').value || '').trim().toUpperCase();
-    if (!q) { alert('Enter an object name or ID to search.'); return; }
-    let o = dwarfDB.find(x => x.id.toUpperCase() === q);
-    if (!o) o = dwarfDB.find(x => x.id.toUpperCase().includes(q) || x.name.toUpperCase().includes(q) || x.type.toUpperCase().includes(q));
-    if (o) {
-        show(o);
-        closeSuggestions();
-        document.getElementById('search').value = '';
-    } else alert('Object not found. Try: M42, Andromeda, Nebula…');
-}
-
-document.getElementById('search').addEventListener('input', function() {
-    closeSuggestions();
-    const q = this.value.trim().toUpperCase();
-    if (!q || q.length < 1) return;
-    const matches = dwarfDB.filter(x => x.id.toUpperCase().includes(q) || x.name.toUpperCase().includes(q) || x.type.toUpperCase().includes(q)).slice(0, 8);
-    if (!matches.length) return;
-    const box = document.createElement('div');
-    box.id = 'searchSuggestions';
-    box.style.cssText = 'position:absolute;top:100%;left:0;right:0;z-index:999;background:var(--bg-panel);border:1px solid var(--accent);border-top:none;border-radius:0 0 10px 10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.5);';
-    box.innerHTML = matches.map(o => {
-        const ic = o.type.toLowerCase().includes('galaxy') ? '🌌' : o.type.toLowerCase().includes('globular') ? '✨' : o.type.toLowerCase().includes('open') ? '⭐' : o.type.toLowerCase().includes('planetary') ? '💫' : o.type.toLowerCase().includes('remnant') ? '💥' : '🌫️';
-        const dc = o.diff === 'Easy' ? '#68d391' : o.diff === 'Hard' ? '#fc8181' : '#f6ad55';
-        return `<div onclick="load('${o.id}');document.getElementById('search').value='';closeSuggestions();" style="display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='rgba(183,148,244,0.1)'" onmouseout="this.style.background='transparent'"><span>${ic}</span><span style="font-family:var(--font-mono);font-weight:700;color:var(--accent);min-width:65px;">${o.id}</span><span style="flex:1;font-size:0.85rem;">${o.name}</span><span style="font-size:0.72rem;color:var(--text-sub);">${o.type}</span><span style="font-size:0.68rem;font-weight:700;color:${dc};padding:2px 6px;border-radius:3px;border:1px solid ${dc};">${o.diff === 'Intermediate' ? 'INT' : o.diff.toUpperCase()}</span></div>`;
-    }).join('');
-    const sb = document.querySelector('.search-box');
-    sb.style.position = 'relative';
-    sb.appendChild(box);
-});
-
-document.getElementById('search').addEventListener('keyup', e => {
-    if (e.key === 'Enter') find();
-    if (e.key === 'Escape') { closeSuggestions(); e.target.value = ''; }
-    if (!e.target.value.trim()) { closeSuggestions(); document.getElementById('sheet').style.display = 'none'; document.getElementById('tipsSection').style.display = 'none'; }
-});
-
-document.addEventListener('click', e => { if (!e.target.closest('.search-box')) closeSuggestions(); });
-
-function toggleGuide() {
-    const content = document.getElementById('guideContent');
-    const arrow = document.getElementById('guideArrow');
-    if (content.style.display === 'none') {
-        content.style.display = 'block';
-        arrow.style.transform = 'rotate(180deg)';
-    } else {
-        content.style.display = 'none';
-        arrow.style.transform = 'rotate(0deg)';
-    }
-}
-
-document.getElementById('obsDate').addEventListener('change', () => {
-    if (window._lastObj) show(window._lastObj);
-    tonightPage = 1;
-    buildTonight();
-});
-
-function computeSkyQuality({ clouds, humidity, wind }) {
-    let seeingScore;
-    if (clouds > 80 || humidity > 90 || wind > 40) seeingScore = 1;
-    else if (clouds > 60 || humidity > 80 || wind > 30) seeingScore = 2;
-    else if (clouds > 40 || humidity > 70 || wind > 20) seeingScore = 3;
-    else if (clouds > 20 || humidity > 60 || wind > 12) seeingScore = 4;
-    else seeingScore = 5;
-    const seeingLabels = ['', 'Very Poor', 'Poor', 'Fair', 'Good', 'Excellent'];
-    const seeingColors = ['', '#fc8181', '#fc8181', '#f6ad55', '#68d391', '#68d391'];
-    const seeingNotes = ['', 'Heavy turbulence — stars bloated, trailing likely', 'Significant turbulence — stacking efficiency reduced', 'Moderate turbulence — acceptable for bright targets', 'Stable atmosphere — good for most DSO imaging', 'Exceptional stability — ideal for all targets'];
-    let transp, transpNote, transpColor;
-    if (clouds > 70 || humidity > 85) { transp = 'Low'; transpNote = 'Significant light scatter'; transpColor = '#fc8181'; }
-    else if (clouds > 40 || humidity > 70) { transp = 'Medium'; transpNote = 'Moderate atmospheric haze'; transpColor = '#f6ad55'; }
-    else if (clouds > 15 || humidity > 55) { transp = 'High'; transpNote = 'Good photon throughput'; transpColor = '#68d391'; }
-    else { transp = 'Superb'; transpNote = 'Near-perfect transparency'; transpColor = '#68d391'; }
-    let suitLabel, suitBg, suitCol, suitBorder;
-    const qualSum = seeingScore + (transp === 'Superb' ? 5 : transp === 'High' ? 4 : transp === 'Medium' ? 2 : 1);
-    if (qualSum >= 9) { suitLabel = '🟢 Excellent night'; suitBg = 'rgba(104,211,145,0.12)'; suitCol = '#68d391'; suitBorder = '#68d391'; }
-    else if (qualSum >= 6) { suitLabel = '🟡 Good night'; suitBg = 'rgba(246,173,85,0.12)'; suitCol = '#f6ad55'; suitBorder = '#f6ad55'; }
-    else if (qualSum >= 4) { suitLabel = '🟠 Marginal night'; suitBg = 'rgba(252,129,129,0.08)'; suitCol = '#f6ad55'; suitBorder = '#f6ad55'; }
-    else { suitLabel = '🔴 Poor night'; suitBg = 'rgba(252,129,129,0.12)'; suitCol = '#fc8181'; suitBorder = '#fc8181'; }
-    return { seeingScore, seeingLabel: seeingLabels[seeingScore], seeingColor: seeingColors[seeingScore], seeingNote: seeingNotes[seeingScore], transparency: transp, transparencyNote: transpNote, transparencyColor: transpColor, suitLabel, suitBg, suitCol, suitBorder };
-}
-
-function updateSkyQualityBanner() {
-    const banner = document.getElementById('skyQualityBanner');
-    if (!banner) return;
-    const sq = window._skyQuality;
-    const mode = (document.getElementById('obsMode') || {}).value || 'deep_sky';
-    const clouds = window._lastClouds || 0;
-    const messages = [];
-    if ((mode === 'deep_sky' || mode === 'milky_way') && sq && sq.seeingScore < 3) {
-        messages.push({ icon: '⚠️', col: '#f6ad55', bg: 'rgba(246,173,85,0.1)', bdr: 'rgba(246,173,85,0.35)', title: 'Atmospheric Seeing is Poor', body: `Seeing rated <strong>${sq.seeingScore}/5 — ${sq.seeingLabel}</strong>. Star stacking tracking efficiency might be reduced tonight. Consider shorter exposures (10–15 s) and discard worst frames during stacking.` });
-    }
-    if (mode === 'time_lapse' && clouds >= 20 && clouds <= 60) {
-        messages.push({ icon: '☁️', col: '#b794f4', bg: 'rgba(183,148,244,0.1)', bdr: 'rgba(183,148,244,0.35)', title: 'Cloud Dynamics Opportunity Detected', body: `Cloud cover at <strong>${clouds}%</strong> — weather conditions are perfect for a cloud dynamics time-lapse! The moving cloud layer will create dramatic motion in your final video.` });
-    }
-    if (mode === 'star_trails' && sq && sq.seeingScore >= 4) {
-        messages.push({ icon: '✅', col: '#68d391', bg: 'rgba(104,211,145,0.08)', bdr: 'rgba(104,211,145,0.3)', title: 'Excellent Seeing for Star Trails', body: `Seeing <strong>${sq.seeingScore}/5</strong> — stars will appear sharp and compact. Trails will have tight, well-defined edges. Great night to shoot!` });
-    }
-    if (!messages.length) { banner.style.display = 'none'; return; }
-    banner.style.display = 'block';
-    banner.innerHTML = messages.map(m => `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-top:1px solid var(--border);"><span style="font-size:1.2rem;line-height:1.4;">${m.icon}</span><div style="flex:1;background:${m.bg};border:1px solid ${m.bdr};border-radius:8px;padding:10px 14px;"><div style="font-size:0.8rem;font-weight:700;color:${m.col};margin-bottom:4px;">${m.title}</div><div style="font-size:0.8rem;color:var(--text-sub);line-height:1.5;">${m.body}</div></div></div>`).join('');
-}
-
-async function loadWeather() {
-    const lat = parseFloat(document.getElementById('latInput').value) || userLat;
-    const lon = parseFloat(document.getElementById('lonInput').value) || userLon;
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,cloud_cover,wind_speed_10m,weather_code&wind_speed_unit=kmh`;
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 15000);
-    const wRow = document.getElementById('weatherRow');
-    const sqBanner = document.getElementById('skyQualityBanner');
-    if (wRow) {
-        wRow.style.display = 'block';
-        wRow.style.borderBottomLeftRadius = '0';
-        wRow.style.borderBottomRightRadius = '0';
-        document.getElementById('wSeeing').innerText = '⏳ Loading…';
-        document.getElementById('wAstroSeeingLabel').innerText = '…';
-        document.getElementById('wTransparency').innerText = '…';
-    }
-    try {
-        const r = await fetch(url, { signal: ctrl.signal });
-        clearTimeout(timer);
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        const d = await r.json();
-        const c = d.current;
-        const clouds = c.cloud_cover, humidity = c.relative_humidity_2m, temp = c.temperature_2m, wind = c.wind_speed_10m;
-        window._lastWind = wind;
-        window._lastClouds = clouds;
-        let seeing, seeingNote;
-        if (clouds > 80) { seeing = '❌ Poor'; seeingNote = 'Too cloudy'; }
-        else if (humidity > 85) { seeing = '⚠️ Fair'; seeingNote = 'High humidity'; }
-        else if (wind > 30) { seeing = '⚠️ Fair'; seeingNote = 'High wind'; }
-        else if (clouds < 20 && humidity < 60 && wind < 15) { seeing = '✅ Good'; seeingNote = 'Good conditions'; }
-        else { seeing = '🔶 Moderate'; seeingNote = 'Check later'; }
-        const sq = computeSkyQuality({ clouds, humidity, wind });
-        window._skyQuality = sq;
-        const cloudCol = clouds > 60 ? '#fc8181' : clouds > 30 ? '#f6ad55' : '#68d391';
-        const humCol = humidity > 80 ? '#fc8181' : humidity > 60 ? '#f6ad55' : '#68d391';
-        document.getElementById('wClouds').innerHTML = `<span style="color:${cloudCol}">${clouds}%</span>`;
-        document.getElementById('wHumidity').innerHTML = `<span style="color:${humCol}">${humidity}%</span>`;
-        document.getElementById('wTemp').innerText = temp + '°C';
-        document.getElementById('wWind').innerText = wind + ' km/h';
-        document.getElementById('wSeeing').innerText = seeing;
-        document.getElementById('wSeeingNote').innerText = seeingNote;
-        document.getElementById('wLocation').innerText = `Lat ${lat.toFixed(2)}° Lon ${lon.toFixed(2)}°`;
-        document.getElementById('wDesc').innerText = weatherDesc(c.weather_code);
-        const starsHTML = Array.from({ length: 5 }, (_, i) => `<span style="color:${i < sq.seeingScore ? sq.seeingColor : 'var(--border)'}">★</span>`).join('');
-        document.getElementById('wAstroSeeingLabel').innerHTML = `<span style="color:${sq.seeingColor}">${sq.seeingScore}/5 — ${sq.seeingLabel}</span>`;
-        document.getElementById('wAstroSeeingStars').innerHTML = starsHTML;
-        document.getElementById('wAstroSeeingNote').innerText = sq.seeingNote;
-        document.getElementById('wTransparency').innerHTML = `<span style="color:${sq.transparencyColor}">${sq.transparency}</span>`;
-        document.getElementById('wTransparencyNote').innerText = sq.transparencyNote;
-        const pill = document.getElementById('wImagingSuit');
-        pill.innerHTML = sq.suitLabel;
-        pill.style.cssText = `font-size:0.78rem;font-weight:700;padding:5px 14px;border-radius:20px;border:1px solid ${sq.suitBorder};color:${sq.suitCol};font-family:var(--font-mono);background:${sq.suitBg};`;
-        if (wRow) wRow.style.display = 'block';
-        updateSkyQualityBanner();
-    } catch (e) {
-        clearTimeout(timer);
-        const isTimeout = e.name === 'AbortError';
-        document.getElementById('wSeeing').innerText = isTimeout ? '⏱️ Timeout' : '❌ Offline';
-        document.getElementById('wSeeingNote').innerText = isTimeout ? 'Request exceeded 15s' : 'No connection';
-        document.getElementById('wAstroSeeingLabel').innerText = '—';
-        document.getElementById('wAstroSeeingStars').innerText = '';
-        document.getElementById('wAstroSeeingNote').innerText = '';
-        document.getElementById('wTransparency').innerText = '—';
-        document.getElementById('wTransparencyNote').innerText = '';
-        document.getElementById('wImagingSuit').innerText = '—';
-        ['wClouds', 'wHumidity', 'wTemp', 'wWind'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = '—'; });
-        document.getElementById('wLocation').innerText = isTimeout ? 'Request timed out' : 'Weather unavailable';
-        document.getElementById('wDesc').innerText = isTimeout ? 'Check connection speed' : 'Connect to load data';
-        if (wRow) wRow.style.display = 'block';
-        if (sqBanner) sqBanner.style.display = 'none';
-    }
-}
-
-function weatherDesc(code) {
-    if (code === 0) return '☀️ Clear sky';
-    if (code <= 3) return '⛅ Partly cloudy';
-    if (code <= 9) return '🌫️ Foggy';
-    if (code <= 19) return '🌧️ Drizzle';
-    if (code <= 29) return '🌨️ Precipitation';
-    if (code <= 39) return '🌫️ Fog';
-    if (code <= 49) return '🌧️ Drizzle';
-    if (code <= 59) return '🌧️ Rain';
-    if (code <= 69) return '❄️ Snow';
-    if (code <= 79) return '🌨️ Sleet';
-    if (code <= 84) return '🌦️ Rain showers';
-    if (code <= 94) return '⛈️ Thunderstorm';
-    return '⛈️ Heavy thunderstorm';
-}
-
-let sessionLog = [];
-try { sessionLog = JSON.parse(localStorage.getItem('dwarf_log') || '[]'); } catch(e) {}
-
-function addToLog() {
-    if (!window._lastObj) { alert('Search for an object first!'); return; }
-    const obj = window._lastObj;
-    const notes = document.getElementById('sessionNotes').value.trim();
-    const date = document.getElementById('obsDate').value || new Date().toISOString().split('T')[0];
-    const bortle = document.getElementById('bortleSelect').value;
-    const mode = (document.getElementById('obsMode') || {}).value || 'deep_sky';
-    const isStarTrails = mode === 'star_trails';
-    const entry = { date, id: obj.id, name: obj.name, exp: obj.settings.exp, gain: obj.settings.gain, filter: obj.settings.filter, frames: obj.settings.frames, bortle, lat: userLat, lon: userLon, notes, mode, starStax: isStarTrails };
-    sessionLog.push(entry);
-    try { localStorage.setItem('dwarf_log', JSON.stringify(sessionLog)); } catch(e) {}
-    renderLog();
-    document.getElementById('sessionNotes').value = '';
-}
-
-function renderLog() {
-    const list = document.getElementById('sessionLogList');
-    const exportBtn = document.getElementById('exportBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    if (!sessionLog.length) {
-        list.innerHTML = '<div style="opacity:0.5">No sessions logged yet.</div>';
-        exportBtn.style.display = 'none';
-        clearBtn.style.display = 'none';
-        return;
-    }
-    exportBtn.style.display = 'inline-block';
-    clearBtn.style.display = 'inline-block';
-    list.innerHTML = sessionLog.slice().reverse().map((e, i) => {
-        const showStarStax = e.starStax || e.mode === 'star_trails';
-        const starStaxBadge = showStarStax ? `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(183,148,244,0.15);border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:2px 7px;font-size:0.68rem;font-weight:700;font-family:var(--font-mono);white-space:nowrap;">⚙️ Ready for StarStaX</span>` : '';
-        return `<div style="padding:6px 0;border-bottom:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;align-items:center;"><span style="color:var(--accent);font-family:var(--font-mono);font-weight:700;">${e.id}</span><span>${e.date}</span><span>⏱️${e.exp}</span><span>📶${e.gain}</span><span>⭕${e.filter}</span><span>🌆B${e.bortle}</span>${starStaxBadge}${e.notes ? `<span style="color:var(--text-sub);font-style:italic;">"${e.notes}"</span>` : ''}<button onclick="removeLog(${sessionLog.length - 1 - i})" style="margin-left:auto;background:none;border:none;color:var(--text-sub);cursor:pointer;font-size:0.8rem;">✕</button></div>`;
-    }).join('');
-}
-
-function removeLog(idx) {
-    sessionLog.splice(idx, 1);
-    try { localStorage.setItem('dwarf_log', JSON.stringify(sessionLog)); } catch(e) {}
-    renderLog();
-}
-
-function clearLog() {
-    if (!confirm('Clear all session logs?')) return;
-    sessionLog = [];
-    try { localStorage.removeItem('dwarf_log'); } catch(e) {}
-    renderLog();
-}
-
-function exportCSV() {
-    const header = 'Date,Object ID,Object Name,Exposure,Gain,Filter,Frames,Bortle,Latitude,Longitude,Mode,Notes';
-    const rows = sessionLog.map(e => {
-        const isStarTrails = e.starStax || e.mode === 'star_trails';
-        let notesVal = e.notes || '';
-        if (isStarTrails) {
-            const suffix = 'Process with StarStaX using Gap Filling mode.';
-            notesVal = notesVal ? `${notesVal} | ${suffix}` : suffix;
-        }
-        const modeLabel = e.mode || 'deep_sky';
-        return [e.date, e.id, `"${e.name}"`, e.exp, e.gain, e.filter, e.frames, e.bortle, e.lat, e.lon, modeLabel, `"${notesVal}"`].join(',');
-    });
-    const csv = [header, ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'dwarf_sessions.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
-renderLog();
-
-document.getElementById('presetLoc').addEventListener('change', function() {
-    if (this.value !== 'custom') {
-        const [lat, lon] = this.value.split(',').map(Number);
-        document.getElementById('latInput').value = lat;
-        document.getElementById('lonInput').value = lon;
-    }
-});
-
-window.addEventListener('resize', () => {
-    if (window._lastObj) {
-        const d = getDate();
-        const pts = getAltCurve(window._lastObj.ra_h, window._lastObj.dec, d);
-        requestAnimationFrame(() => {
-            const c = document.getElementById('altCanvas');
-            if (c) { c.style.height = '180px'; }
-            setTimeout(() => drawAlt(pts, d), 50);
-        });
-    }
-});
-
-let tonightFilter = 'all';
-let tonightOpen = true;
-const TONIGHT_PAGE_SIZE = 24;
-let tonightPage = 1;
-
-function toggleTonight() {
-    tonightOpen = !tonightOpen;
-    document.getElementById('tonightContent').style.display = tonightOpen ? 'block' : 'none';
-    document.getElementById('tonightArrow').style.transform = tonightOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
-}
-
-function tonightLoadMore() {
-    tonightPage++;
-    renderTonight(window._tonightResults || []);
-}
-
-function setTonightFilter(f) {
-    tonightFilter = f;
-    tonightPage = 1;
-    const ids = ['tbtnAll', 'tbtnGal', 'tbtnNeb', 'tbtnGlob', 'tbtnEasy', 'tbtnInt', 'tbtnHard'];
-    const vals = ['all', 'Galaxy', 'Nebula', 'Globular', 'Easy', 'Intermediate', 'Hard'];
-    ids.forEach((id, i) => {
-        const btn = document.getElementById(id);
-        if (!btn) return;
-        const active = vals[i] === f;
-        btn.style.background = active ? 'var(--accent)' : 'transparent';
-        btn.style.color = active ? '#000' : 'var(--text-sub)';
-        btn.style.borderColor = active ? 'var(--accent)' : 'var(--border)';
-        btn.style.fontWeight = active ? '700' : '400';
-    });
-    const sel = document.getElementById('tonightFilterSelect');
-    if (sel && sel.value !== f) sel.value = f;
-    renderTonight(window._tonightResults || []);
-}
-
-function buildTonight() {
-    const date = getDate();
-    const results = [];
-    dwarfDB.forEach(obj => {
-        const pts = getAltCurve(obj.ra_h, obj.dec, date);
-        const nightPts = pts.filter(p => p.alt >= 30);
-        if (!nightPts.length) return;
-        let maxAlt = -99;
-        nightPts.forEach(p => { if (p.alt > maxAlt) maxAlt = p.alt; });
-        const fmt = h => { const hh = Math.floor(h) % 24, mm = Math.round((h % 1) * 60); return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0'); };
-        const winStart = fmt(nightPts[0].h);
-        const winEnd = fmt(nightPts[nightPts.length - 1].h);
-        results.push({ obj, maxAlt, winStart, winEnd });
-    });
-    results.sort((a, b) => b.maxAlt - a.maxAlt);
-    window._tonightResults = results;
-    renderTonight(results);
-    const subtitle = document.getElementById('tonightSubtitle');
-    if (subtitle) subtitle.innerText = `${results.length} objects visible tonight · ${date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} · Lat ${userLat.toFixed(1)}°`;
-}
-
-function renderTonight(results) {
-    const grid = document.getElementById('tonightGrid');
-    const count = document.getElementById('tonightCount');
-    let filtered = results;
-    if (tonightFilter === 'Easy' || tonightFilter === 'Intermediate' || tonightFilter === 'Hard') {
-        filtered = results.filter(r => r.obj.diff === tonightFilter);
-    } else if (tonightFilter !== 'all') {
-        filtered = results.filter(r => r.obj.type.toLowerCase().includes(tonightFilter.toLowerCase()));
-    }
-    if (!filtered.length) {
-        grid.innerHTML = '<div style="color:var(--text-sub);font-size:0.85rem;grid-column:1/-1;text-align:center;padding:20px 0;">No objects matching this filter visible tonight.</div>';
-        if (count) count.innerText = '';
-        return;
-    }
-    const totalVisible = filtered.length;
-    const pageItems = filtered.slice(0, tonightPage * TONIGHT_PAGE_SIZE);
-    const hasMore = totalVisible > pageItems.length;
-    if (count) count.innerText = `${totalVisible} object${totalVisible !== 1 ? 's' : ''} visible`;
-    grid.innerHTML = pageItems.map(r => {
-        const obj = r.obj;
-        const altColor = r.maxAlt >= 60 ? '#68d391' : r.maxAlt >= 40 ? '#f6ad55' : '#fc8181';
-        const barWidth = Math.round(Math.min(100, (r.maxAlt / 90) * 100));
-        const diffClass = obj.diff === 'Easy' ? 'color:#68d391;background:rgba(104,211,145,0.15);border:1px solid #68d391;' : obj.diff === 'Hard' ? 'color:#fc8181;background:rgba(252,129,129,0.15);border:1px solid #fc8181;' : 'color:#f6ad55;background:rgba(246,173,85,0.15);border:1px solid #f6ad55;';
-        const typeIcon = obj.type.toLowerCase().includes('galaxy') ? '🌌' : obj.type.toLowerCase().includes('globular') ? '✨' : obj.type.toLowerCase().includes('open') ? '⭐' : obj.type.toLowerCase().includes('planetary') ? '💫' : obj.type.toLowerCase().includes('remnant') ? '💥' : '🌫️';
-        return `<div class="tonight-card" onclick="load('${obj.id}')"><span class="tc-diff" style="${diffClass}">${obj.diff === 'Easy' ? 'EASY' : obj.diff === 'Hard' ? 'HARD' : 'INT'}</span><div class="tc-id">${typeIcon} ${obj.id}</div><div class="tc-name">${obj.name}</div><div class="tc-alt" style="color:${altColor}">↑ ${Math.round(r.maxAlt)}°</div><div class="tc-win">🕐 ${r.winStart} – ${r.winEnd}</div><div class="tc-bar"><div class="tc-bar-fill" style="width:${barWidth}%;background:${altColor};"></div></div></div>`;
-    }).join('');
-    if (hasMore) {
-        const remaining = totalVisible - pageItems.length;
-        const loadMoreEl = document.createElement('div');
-        loadMoreEl.style.cssText = 'grid-column:1/-1;text-align:center;padding:10px 0 4px;';
-        loadMoreEl.innerHTML = `<button onclick="tonightLoadMore()" style="font-size:0.8rem;padding:8px 24px;border-radius:7px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;font-weight:700;">⬇ Load more (${remaining} remaining)</button>`;
-        grid.appendChild(loadMoreEl);
-    }
-}
-
-setTimeout(() => buildTonight(), 800);
-
-(function() {
-    try {
-        const savedMode = localStorage.getItem('dwarf_obs_mode');
-        if (savedMode && savedMode !== 'deep_sky') {
-            const sel = document.getElementById('obsMode');
-            if (sel) sel.value = savedMode;
-            switchObsMode(savedMode);
-        }
-    } catch(e) {}
-})();
